@@ -1,1 +1,329 @@
-import React, { useState, useEffect, useRef } from 'react';\nimport ForgeReconciler, { Box, Text, TextField, Button, Stack, Avatar, Spinner, Badge } from '@forge/react';\nimport { invoke } from '@forge/bridge';\n\nconst ChatbotMain = () => {\n  const [messages, setMessages] = useState([]);\n  const [inputMessage, setInputMessage] = useState('');\n  const [isLoading, setIsLoading] = useState(false);\n  const [conversationId, setConversationId] = useState(null);\n  const [settings, setSettings] = useState(null);\n  const messagesEndRef = useRef(null);\n\n  useEffect(() => {\n    // Load settings and initial setup\n    loadSettings();\n    loadConversation();\n  }, []);\n\n  useEffect(() => {\n    // Scroll to bottom when new messages are added\n    scrollToBottom();\n  }, [messages]);\n\n  const loadSettings = async () => {\n    try {\n      const response = await invoke('getSettings');\n      if (response.success) {\n        setSettings(response.settings);\n        \n        // Add welcome message if no conversation exists\n        if (!conversationId) {\n          setMessages([{\n            role: 'assistant',\n            content: response.settings.welcomeMessage,\n            timestamp: new Date().toISOString(),\n            isWelcome: true\n          }]);\n        }\n      }\n    } catch (error) {\n      console.error('Error loading settings:', error);\n    }\n  };\n\n  const loadConversation = async () => {\n    if (!conversationId) return;\n    \n    try {\n      const response = await invoke('getConversation', { conversationId });\n      if (response.success && response.messages.length > 0) {\n        setMessages(response.messages);\n      }\n    } catch (error) {\n      console.error('Error loading conversation:', error);\n    }\n  };\n\n  const scrollToBottom = () => {\n    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });\n  };\n\n  const handleSendMessage = async () => {\n    if (!inputMessage.trim() || isLoading) return;\n\n    const userMessage = {\n      role: 'user',\n      content: inputMessage,\n      timestamp: new Date().toISOString()\n    };\n\n    setMessages(prev => [...prev, userMessage]);\n    setInputMessage('');\n    setIsLoading(true);\n\n    try {\n      const response = await invoke('sendMessage', {\n        message: inputMessage,\n        conversationId\n      });\n\n      if (response.success) {\n        const assistantMessage = {\n          role: 'assistant',\n          content: response.response,\n          timestamp: new Date().toISOString(),\n          sources: response.sources\n        };\n\n        setMessages(prev => [...prev, assistantMessage]);\n        setConversationId(response.conversationId);\n      } else {\n        const errorMessage = {\n          role: 'assistant',\n          content: `Sorry, I encountered an error: ${response.error}`,\n          timestamp: new Date().toISOString(),\n          isError: true\n        };\n        setMessages(prev => [...prev, errorMessage]);\n      }\n    } catch (error) {\n      console.error('Error sending message:', error);\n      const errorMessage = {\n        role: 'assistant',\n        content: 'Sorry, I\\'m having trouble connecting right now. Please try again.',\n        timestamp: new Date().toISOString(),\n        isError: true\n      };\n      setMessages(prev => [...prev, errorMessage]);\n    } finally {\n      setIsLoading(false);\n    }\n  };\n\n  const handleKeyPress = (event) => {\n    if (event.key === 'Enter' && !event.shiftKey) {\n      event.preventDefault();\n      handleSendMessage();\n    }\n  };\n\n  const formatTimestamp = (timestamp) => {\n    return new Date(timestamp).toLocaleTimeString([], { \n      hour: '2-digit', \n      minute: '2-digit' \n    });\n  };\n\n  const MessageBubble = ({ message }) => {\n    const isUser = message.role === 'user';\n    const isError = message.isError;\n    const isWelcome = message.isWelcome;\n    \n    return (\n      <Box\n        xcss={{\n          display: 'flex',\n          flexDirection: isUser ? 'row-reverse' : 'row',\n          alignItems: 'flex-start',\n          gap: '8px',\n          marginBottom: '16px',\n          maxWidth: '100%'\n        }}\n      >\n        <Avatar\n          size=\"small\"\n          appearance={isUser ? 'circle' : 'square'}\n          name={isUser ? 'You' : (settings?.chatbotName || 'AI')}\n        />\n        \n        <Box\n          xcss={{\n            maxWidth: '70%',\n            display: 'flex',\n            flexDirection: 'column',\n            gap: '4px'\n          }}\n        >\n          <Box\n            xcss={{\n              padding: '12px 16px',\n              borderRadius: '18px',\n              backgroundColor: isUser \n                ? (settings?.theme?.primaryColor || '#1976d2')\n                : isError \n                  ? '#ffebee'\n                  : isWelcome\n                    ? '#e3f2fd'\n                    : '#f5f5f5',\n              color: isUser \n                ? (settings?.theme?.secondaryColor || '#ffffff')\n                : isError\n                  ? '#c62828'\n                  : (settings?.theme?.textColor || '#333333'),\n              border: isError ? '1px solid #ffcdd2' : 'none',\n              wordWrap: 'break-word',\n              whiteSpace: 'pre-wrap'\n            }}\n          >\n            <Text>{message.content}</Text>\n          </Box>\n          \n          {message.sources && message.sources.length > 0 && (\n            <Box xcss={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>\n              {message.sources.map((source, index) => (\n                <Badge key={index} appearance=\"primary\">\n                  {source.title}\n                </Badge>\n              ))}\n            </Box>\n          )}\n          \n          <Text\n            xcss={{\n              fontSize: '12px',\n              color: '#666666',\n              alignSelf: isUser ? 'flex-end' : 'flex-start'\n            }}\n          >\n            {formatTimestamp(message.timestamp)}\n          </Text>\n        </Box>\n      </Box>\n    );\n  };\n\n  return (\n    <Box\n      xcss={{\n        height: '600px',\n        maxWidth: '800px',\n        margin: '0 auto',\n        backgroundColor: settings?.theme?.backgroundColor || '#ffffff',\n        borderRadius: '12px',\n        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',\n        display: 'flex',\n        flexDirection: 'column',\n        border: `1px solid ${settings?.theme?.primaryColor || '#1976d2'}20`\n      }}\n    >\n      {/* Header */}\n      <Box\n        xcss={{\n          padding: '20px',\n          backgroundColor: settings?.theme?.primaryColor || '#1976d2',\n          color: settings?.theme?.secondaryColor || '#ffffff',\n          borderRadius: '12px 12px 0 0',\n          textAlign: 'center'\n        }}\n      >\n        <Text xcss={{ fontSize: '18px', fontWeight: 'bold' }}>\n          {settings?.chatbotName || 'AI Knowledge Assistant'}\n        </Text>\n        <Text xcss={{ fontSize: '14px', opacity: 0.9, marginTop: '4px' }}>\n          Powered by AWS AI Services\n        </Text>\n      </Box>\n\n      {/* Messages Container */}\n      <Box\n        xcss={{\n          flex: 1,\n          padding: '20px',\n          overflowY: 'auto',\n          display: 'flex',\n          flexDirection: 'column'\n        }}\n      >\n        {messages.map((message, index) => (\n          <MessageBubble key={index} message={message} />\n        ))}\n        \n        {isLoading && (\n          <Box\n            xcss={{\n              display: 'flex',\n              alignItems: 'center',\n              gap: '8px',\n              marginBottom: '16px'\n            }}\n          >\n            <Avatar size=\"small\" appearance=\"square\" name=\"AI\" />\n            <Box\n              xcss={{\n                padding: '12px 16px',\n                borderRadius: '18px',\n                backgroundColor: '#f5f5f5',\n                display: 'flex',\n                alignItems: 'center',\n                gap: '8px'\n              }}\n            >\n              <Spinner size=\"small\" />\n              <Text>Thinking...</Text>\n            </Box>\n          </Box>\n        )}\n        \n        <div ref={messagesEndRef} />\n      </Box>\n\n      {/* Input Container */}\n      <Box\n        xcss={{\n          padding: '20px',\n          borderTop: '1px solid #e0e0e0',\n          backgroundColor: '#fafafa',\n          borderRadius: '0 0 12px 12px'\n        }}\n      >\n        <Stack space=\"medium\">\n          <TextField\n            value={inputMessage}\n            onChange={setInputMessage}\n            onKeyPress={handleKeyPress}\n            placeholder=\"Ask me anything about your knowledge base...\"\n            isMultiline\n            rows={2}\n            appearance=\"standard\"\n            isDisabled={isLoading}\n          />\n          \n          <Box xcss={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>\n            <Text xcss={{ fontSize: '12px', color: '#666666' }}>\n              Press Enter to send, Shift+Enter for new line\n            </Text>\n            \n            <Button\n              onClick={handleSendMessage}\n              appearance=\"primary\"\n              isDisabled={!inputMessage.trim() || isLoading}\n            >\n              {isLoading ? 'Sending...' : 'Send'}\n            </Button>\n          </Box>\n        </Stack>\n      </Box>\n    </Box>\n  );\n};\n\nForgeReconciler.render(\n  <React.StrictMode>\n    <ChatbotMain />\n  </React.StrictMode>\n);\n\nexport default ChatbotMain;
+import React, { useState, useEffect, useRef } from 'react';
+import ForgeReconciler, { Box, Text, TextField, Button, Stack, Avatar, Spinner, Badge } from '@forge/react';
+import { invoke } from '@forge/bridge';
+
+const ChatbotMain = () => {
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const [settings, setSettings] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Load settings and initial setup
+    loadSettings();
+    loadConversation();
+  }, []);
+
+  useEffect(() => {
+    // Scroll to bottom when new messages are added
+    scrollToBottom();
+  }, [messages]);
+
+  const loadSettings = async () => {
+    try {
+      const response = await invoke('getSettings');
+      if (response.success) {
+        setSettings(response.settings);
+        
+        // Add welcome message if no conversation exists
+        if (!conversationId) {
+          setMessages([{
+            role: 'assistant',
+            content: response.settings.welcomeMessage,
+            timestamp: new Date().toISOString(),
+            isWelcome: true
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const loadConversation = async () => {
+    if (!conversationId) return;
+    
+    try {
+      const response = await invoke('getConversation', { conversationId });
+      if (response.success && response.messages.length > 0) {
+        setMessages(response.messages);
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+
+    const userMessage = {
+      role: 'user',
+      content: inputMessage,
+      timestamp: new Date().toISOString()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await invoke('sendMessage', {
+        message: inputMessage,
+        conversationId
+      });
+
+      if (response.success) {
+        const assistantMessage = {
+          role: 'assistant',
+          content: response.response,
+          timestamp: new Date().toISOString(),
+          sources: response.sources
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+        setConversationId(response.conversationId);
+      } else {
+        const errorMessage = {
+          role: 'assistant',
+          content: `Sorry, I encountered an error: ${response.error}`,
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = {
+        role: 'assistant',
+        content: 'Sorry, I\'m having trouble connecting right now. Please try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const formatTimestamp = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const MessageBubble = ({ message }) => {
+    const isUser = message.role === 'user';
+    const isError = message.isError;
+    const isWelcome = message.isWelcome;
+    
+    return (
+      <Box
+        xcss={{
+          display: 'flex',
+          flexDirection: isUser ? 'row-reverse' : 'row',
+          alignItems: 'flex-start',
+          gap: '8px',
+          marginBottom: '16px',
+          maxWidth: '100%'
+        }}
+      >
+        <Avatar
+          size="small"
+          appearance={isUser ? 'circle' : 'square'}
+          name={isUser ? 'You' : (settings?.chatbotName || 'AI')}
+        />
+        
+        <Box
+          xcss={{
+            maxWidth: '70%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}
+        >
+          <Box
+            xcss={{
+              padding: '12px 16px',
+              borderRadius: '18px',
+              backgroundColor: isUser 
+                ? (settings?.theme?.primaryColor || '#1976d2')
+                : isError 
+                  ? '#ffebee'
+                  : isWelcome
+                    ? '#e3f2fd'
+                    : '#f5f5f5',
+              color: isUser 
+                ? (settings?.theme?.secondaryColor || '#ffffff')
+                : isError
+                  ? '#c62828'
+                  : (settings?.theme?.textColor || '#333333'),
+              border: isError ? '1px solid #ffcdd2' : 'none',
+              wordWrap: 'break-word',
+              whiteSpace: 'pre-wrap'
+            }}
+          >
+            <Text>{message.content}</Text>
+          </Box>
+          
+          {message.sources && message.sources.length > 0 && (
+            <Box xcss={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+              {message.sources.map((source, index) => (
+                <Badge key={index} appearance="primary">
+                  {source.title}
+                </Badge>
+              ))}
+            </Box>
+          )}
+          
+          <Text
+            xcss={{
+              fontSize: '12px',
+              color: '#666666',
+              alignSelf: isUser ? 'flex-end' : 'flex-start'
+            }}
+          >
+            {formatTimestamp(message.timestamp)}
+          </Text>
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Box
+      xcss={{
+        height: '600px',
+        maxWidth: '800px',
+        margin: '0 auto',
+        backgroundColor: settings?.theme?.backgroundColor || '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        border: `1px solid ${settings?.theme?.primaryColor || '#1976d2'}20`
+      }}
+    >
+      {/* Header */}
+      <Box
+        xcss={{
+          padding: '20px',
+          backgroundColor: settings?.theme?.primaryColor || '#1976d2',
+          color: settings?.theme?.secondaryColor || '#ffffff',
+          borderRadius: '12px 12px 0 0',
+          textAlign: 'center'
+        }}
+      >
+        <Text xcss={{ fontSize: '18px', fontWeight: 'bold' }}>
+          {settings?.chatbotName || 'AI Knowledge Assistant'}
+        </Text>
+        <Text xcss={{ fontSize: '14px', opacity: 0.9, marginTop: '4px' }}>
+          Powered by AWS AI Services
+        </Text>
+      </Box>
+
+      {/* Messages Container */}
+      <Box
+        xcss={{
+          flex: 1,
+          padding: '20px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        {messages.map((message, index) => (
+          <MessageBubble key={index} message={message} />
+        ))}
+        
+        {isLoading && (
+          <Box
+            xcss={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px'
+            }}
+          >
+            <Avatar size="small" appearance="square" name="AI" />
+            <Box
+              xcss={{
+                padding: '12px 16px',
+                borderRadius: '18px',
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Spinner size="small" />
+              <Text>Thinking...</Text>
+            </Box>
+          </Box>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </Box>
+
+      {/* Input Container */}
+      <Box
+        xcss={{
+          padding: '20px',
+          borderTop: '1px solid #e0e0e0',
+          backgroundColor: '#fafafa',
+          borderRadius: '0 0 12px 12px'
+        }}
+      >
+        <Stack space="medium">
+          <TextField
+            value={inputMessage}
+            onChange={setInputMessage}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask me anything about your knowledge base..."
+            isMultiline
+            rows={2}
+            appearance="standard"
+            isDisabled={isLoading}
+          />
+          
+          <Box xcss={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text xcss={{ fontSize: '12px', color: '#666666' }}>
+              Press Enter to send, Shift+Enter for new line
+            </Text>
+            
+            <Button
+              onClick={handleSendMessage}
+              appearance="primary"
+              isDisabled={!inputMessage.trim() || isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Send'}
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+    </Box>
+  );
+};
+
+ForgeReconciler.render(
+  <React.StrictMode>
+    <ChatbotMain />
+  </React.StrictMode>
+);
+
+export default ChatbotMain;
+
+
