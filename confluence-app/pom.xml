@@ -17,8 +17,6 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluence.version>7.19.0</confluence.version>
-        <atlassian.plugin.sdk.version>8.2.7</atlassian.plugin.sdk.version>
-        <aws.sdk.version>2.20.56</aws.sdk.version>
         <jackson.version>2.15.2</jackson.version>
     </properties>
 
@@ -45,20 +43,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- AWS SDK (shaded to avoid conflicts) -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>bedrock-runtime</artifactId>
-            <version>${aws.sdk.version}</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>${aws.sdk.version}</version>
-        </dependency>
-
-        <!-- HTTP Client -->
+        <!-- HTTP Client for AWS API calls -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -70,6 +55,26 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->
@@ -150,6 +155,20 @@
     </build>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+        </repository>
         <repository>
             <id>atlassian-public</id>
             <url>https://packages.atlassian.com/mvn/maven-external/</url>

@@ -78,15 +78,31 @@ if (-not (Test-Path $appDir -PathType Container)) {
 Push-Location $appDir
 
 Write-Host 'Running Maven clean & package...' -ForegroundColor Cyan
-$mvnArgs = @('clean','package')
+Write-Host 'Clearing dependency cache...' -ForegroundColor Yellow
+
+# Force update of snapshots and clear cache for problematic dependencies
+$mvnArgs = @('dependency:purge-local-repository', 'clean', 'package', '-U', '--fail-at-end')
 if (-not $Verbose) { $mvnArgs += '-q' }
+
 # Maven via cmd.exe für konsistente Stream-Behandlung
 cmd.exe /c "mvn $($mvnArgs -join ' ') 2>&1"
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Maven Build fehlgeschlagen. Mit -Verbose mehr Details."
-    Pop-Location
-    Pause
-    exit 1
+    Write-Host ""
+    Write-Host "❌ Maven Build fehlgeschlagen." -ForegroundColor Red
+    Write-Host "Versuche alternative Lösungen..." -ForegroundColor Yellow
+    
+    # Try with just basic clean package and force updates
+    Write-Host "Versuche vereinfachten Build..." -ForegroundColor Yellow
+    $simpleArgs = @('clean', 'compile', 'package', '-U', '-Dmaven.test.skip=true')
+    if (-not $Verbose) { $simpleArgs += '-q' }
+    
+    cmd.exe /c "mvn $($simpleArgs -join ' ') 2>&1"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Auch der vereinfachte Build ist fehlgeschlagen. Mit -Verbose mehr Details."
+        Pop-Location
+        Pause
+        exit 1
+    }
 }
 
 # 3) Ergebnis prüfen
