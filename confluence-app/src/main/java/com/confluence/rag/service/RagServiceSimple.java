@@ -46,7 +46,7 @@ public class RagServiceSimple implements RagServiceInterface {
     @Override
     public ChatResponse processChat(ChatRequest request) {
         if (request == null || request.getMessage() == null || request.getMessage().trim().isEmpty()) {
-            return new ChatResponse("Please provide a valid question.", false);
+            return ChatResponse.error("Please provide a valid question.", request != null ? request.getSessionId() : "unknown");
         }
         
         logger.info("Processing chat request: {}", request.getMessage());
@@ -58,11 +58,11 @@ public class RagServiceSimple implements RagServiceInterface {
             String responseText = generateResponse(request.getMessage(), context);
             
             logger.info("Successfully processed chat request");
-            return new ChatResponse(responseText, true);
+            return new ChatResponse(responseText, request.getSessionId());
             
         } catch (Exception e) {
             logger.error("Error processing chat request", e);
-            return new ChatResponse("I apologize, but I encountered an error while processing your question. Please try again or contact your administrator.", false);
+            return ChatResponse.error("I apologize, but I encountered an error while processing your question. Please try again or contact your administrator.", request.getSessionId());
         }
     }
     
@@ -70,7 +70,7 @@ public class RagServiceSimple implements RagServiceInterface {
     public DocumentProcessingResponse processDocument(DocumentProcessingRequest request) {
         if (request == null || request.getContent() == null) {
             logger.warn("Invalid document processing request");
-            return new DocumentProcessingResponse(false, "Invalid document request");
+            return new DocumentProcessingResponse(false, "unknown", "Invalid document request");
         }
         
         logger.info("Processing document: {}", request.getDocumentId());
@@ -87,11 +87,12 @@ public class RagServiceSimple implements RagServiceInterface {
             }
             
             logger.info("Successfully processed document: {}", request.getDocumentId());
-            return new DocumentProcessingResponse(true, "Document processed successfully");
+            return new DocumentProcessingResponse(true, request.getDocumentId(), "Document processed successfully");
             
         } catch (Exception e) {
-            logger.error("Error processing document: " + request.getDocumentId(), e);
-            return new DocumentProcessingResponse(false, "Error processing document: " + e.getMessage());
+            String docId = (request != null && request.getDocumentId() != null) ? request.getDocumentId() : "unknown";
+            logger.error("Error processing document: " + docId, e);
+            return new DocumentProcessingResponse(false, docId, "Error processing document: " + e.getMessage());
         }
     }
     
