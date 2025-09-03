@@ -36,9 +36,9 @@ Write-Host "📦 Building with minimal configuration..." -ForegroundColor Cyan
 try {
     if ($Verbose) {
         Write-Host "Command: mvn -f pom-minimal.xml clean compile package -Dmaven.test.skip=true" -ForegroundColor Gray
-        cmd.exe /c "mvn -f pom-minimal.xml clean compile package -Dmaven.test.skip=true 2>&1"
+        mvn -f pom-minimal.xml clean compile package -Dmaven.test.skip=true
     } else {
-        cmd.exe /c "mvn -f pom-minimal.xml clean compile package -Dmaven.test.skip=true -q 2>&1"
+        mvn -f pom-minimal.xml clean compile package -Dmaven.test.skip=true -q
     }
     
     if ($LASTEXITCODE -ne 0) {
@@ -51,9 +51,9 @@ try {
     
     try {
         if ($Verbose) {
-            cmd.exe /c "mvn -f pom-minimal.xml clean compile -Dmaven.test.skip=true 2>&1"
+            mvn -f pom-minimal.xml clean compile -Dmaven.test.skip=true
         } else {
-            cmd.exe /c "mvn -f pom-minimal.xml clean compile -Dmaven.test.skip=true -q 2>&1"
+            mvn -f pom-minimal.xml clean compile -Dmaven.test.skip=true -q
         }
         
         if ($LASTEXITCODE -eq 0) {
@@ -62,8 +62,7 @@ try {
             
             # Create JAR manually
             New-Item -ItemType Directory -Path "target" -Force -ErrorAction SilentlyContinue
-            $jarCmd = "jar -cf target/confluence-rag-chatbot-1.0.0.jar -C target/classes . -C src/main/resources ."
-            cmd.exe /c $jarCmd
+            jar -cf target/confluence-rag-chatbot-1.0.0.jar -C target/classes . -C src/main/resources .
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Manual JAR creation successful!" -ForegroundColor Green
@@ -85,6 +84,7 @@ try {
         Set-Location ..
         exit 1
     }
+}
 }
 
 # Check result
