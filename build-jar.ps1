@@ -75,7 +75,7 @@ $jarPath = "target\confluence-rag-chatbot-1.0.0.jar"
 if (Test-Path $jarPath) {
     Write-Host "✅ Confluence app built successfully!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "📁 JAR location: confluence-app\$jarPath" -ForegroundColor White
+    Write-Host "📁 JAR location: confluence-app\$($jarPath)" -ForegroundColor White
     
     $fileSize = (Get-Item $jarPath).Length
     $fileSizeMB = [math]::Round($fileSize / 1MB, 2)
@@ -87,7 +87,7 @@ if (Test-Path $jarPath) {
     Write-Host "1. Upload the JAR file to your Confluence Data Center:" -ForegroundColor White
     Write-Host "   - Go to Confluence Administration → Manage Apps" -ForegroundColor Gray
     Write-Host "   - Click 'Upload app'" -ForegroundColor Gray
-    Write-Host "   - Select: confluence-app\$jarPath" -ForegroundColor Gray
+    Write-Host "   - Select: confluence-app\$($jarPath)" -ForegroundColor Gray
     Write-Host ""
     Write-Host "2. Configure the app:" -ForegroundColor White
     Write-Host "   - Go to Administration → RAG Chatbot Configuration" -ForegroundColor Gray
