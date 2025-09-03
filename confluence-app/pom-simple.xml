@@ -17,13 +17,12 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluence.version>7.19.0</confluence.version>
-        <atlassian.plugin.sdk.version>8.2.7</atlassian.plugin.sdk.version>
         <aws.sdk.version>2.20.56</aws.sdk.version>
         <jackson.version>2.15.2</jackson.version>
     </properties>
 
     <dependencies>
-        <!-- Confluence Dependencies -->
+        <!-- Essential Confluence Dependencies (provided) -->
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
             <artifactId>confluence</artifactId>
@@ -45,31 +44,30 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- AWS SDK (shaded to avoid conflicts) -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>bedrock-runtime</artifactId>
-            <version>${aws.sdk.version}</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>${aws.sdk.version}</version>
-        </dependency>
-
-        <!-- HTTP Client -->
+        <!-- Core Dependencies (included) -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
         </dependency>
 
-        <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- AWS SDK with minimal footprint -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+            <version>${aws.sdk.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>http-client-spi</artifactId>
+            <version>${aws.sdk.version}</version>
         </dependency>
 
         <!-- Testing -->
@@ -103,16 +101,15 @@
                             <Atlassian-Plugin-Key>com.confluence.rag.confluence-rag-chatbot</Atlassian-Plugin-Key>
                             <Atlassian-Plugin-Name>Confluence RAG Chatbot</Atlassian-Plugin-Name>
                             <Atlassian-Plugin-Version>1.0.0</Atlassian-Plugin-Version>
-                            <Atlassian-Plugin-Description>AI-powered RAG chatbot for Confluence using AWS services</Atlassian-Plugin-Description>
                             <Bundle-Name>Confluence RAG Chatbot</Bundle-Name>
                             <Bundle-SymbolicName>com.confluence.rag.confluence-rag-chatbot</Bundle-SymbolicName>
                             <Bundle-Version>1.0.0</Bundle-Version>
-                            <Bundle-Vendor>Confluence RAG</Bundle-Vendor>
                         </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
 
+            <!-- Shade plugin to include dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -125,6 +122,7 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -132,9 +130,18 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/LICENSE*</exclude>
+                                        <exclude>META-INF/NOTICE*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Atlassian-Plugin-Key>com.confluence.rag.confluence-rag-chatbot</Atlassian-Plugin-Key>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
@@ -155,12 +162,9 @@
             <url>https://packages.atlassian.com/mvn/maven-external/</url>
             <snapshots>
                 <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
             </snapshots>
             <releases>
                 <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
             </releases>
         </repository>
         <repository>
@@ -168,42 +172,10 @@
             <url>https://maven.atlassian.com/repository/public</url>
             <snapshots>
                 <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
             </snapshots>
             <releases>
                 <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
             </releases>
         </repository>
     </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/mvn/maven-external/</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>atlassian-private</id>
-            <url>https://maven.atlassian.com/repository/public</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
 </project>

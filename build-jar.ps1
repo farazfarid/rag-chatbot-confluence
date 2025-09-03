@@ -1,118 +1,105 @@
-# Confluence RAG Chatbot - JAR Build Script (PowerShell)
-# This script builds only the Confluence app JAR without requiring AWS CLI
-
+<#
+.SYNOPSIS
+    Build Script für Confluence RAG Chatbot JAR (ohne AWS CLI).
+.PARAMETER Version
+    Version für das Artefakt (Standard: 1.0.0).
+.PARAMETER NonInteractive
+    Unterdrückt interaktive Pausen (CI-Modus).
+.PARAMETER Verbose
+    Gibt Maven-Output detailliert aus.
+#>
 param(
+    [string]$Version = '1.0.0',
+    [switch]$NonInteractive,
     [switch]$Verbose
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
-Write-Host "🔨 Building Confluence RAG Chatbot JAR..." -ForegroundColor Cyan
-
-# Check prerequisites
-Write-Host "📋 Checking prerequisites..." -ForegroundColor Yellow
-
-# Check if Maven is installed
-try {
-    $mavenVersion = mvn -version 2>$null
-    if ($LASTEXITCODE -ne 0) { throw }
-    Write-Host "✅ Maven: $($mavenVersion[0])" -ForegroundColor Green
-} catch {
-    Write-Host "❌ Maven is not installed. Please install Maven 3.6+ first." -ForegroundColor Red
-    Write-Host "   Download from: https://maven.apache.org/download.cgi" -ForegroundColor Yellow
-    Read-Host "Press Enter to exit"
-    exit 1
+function Pause {
+    param([string]$Message = 'Press Enter to continue...')
+    if (-not $NonInteractive) {
+        Read-Host $Message
+    }
 }
 
-# Check if Java is installed
-try {
-    $javaVersion = java -version 2>&1 | Select-Object -First 1
-    if ($LASTEXITCODE -ne 0) { throw }
-    Write-Host "✅ Java: $javaVersion" -ForegroundColor Green
-    
-    # Extract Java version number
-    $versionMatch = [regex]::Match($javaVersion, '"(\d+)\.(\d+)')
-    if ($versionMatch.Success) {
-        $majorVersion = [int]$versionMatch.Groups[1].Value
-        if ($majorVersion -lt 11) {
-            Write-Host "❌ Java 11+ is required. Current version appears to be Java $majorVersion" -ForegroundColor Red
-            Read-Host "Press Enter to exit"
-            exit 1
-        }
-    }
-} catch {
-    Write-Host "❌ Java is not installed. Please install Java 11+ first." -ForegroundColor Red
-    Write-Host "   Download from: https://adoptium.net/" -ForegroundColor Yellow
-    Read-Host "Press Enter to exit"
+Write-Host "Building Confluence RAG Chatbot JAR (v$Version)..." -ForegroundColor Cyan
+
+# 1) Prerequisites prüfen
+Write-Host "Checking prerequisites..." -ForegroundColor Yellow
+
+# Maven prüfen
+$mvnOutput = cmd.exe /c "mvn -version 2>&1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Maven nicht gefunden. Bitte Maven 3.6+ installieren."
+    Write-Host "Download: https://maven.apache.org/download.cgi" -ForegroundColor Yellow
+    Pause
     exit 1
 }
+$mvnLine = ($mvnOutput | Select-Object -First 1).Trim()
+Write-Host "Maven found: $mvnLine" -ForegroundColor Green
 
-# Build Confluence App
-Write-Host "🔨 Building Confluence app..." -ForegroundColor Cyan
-Set-Location confluence-app
-
-# Clean and build
-Write-Host "📦 Running Maven clean package..." -ForegroundColor Yellow
-try {
-    if ($Verbose) {
-        mvn clean package
-    } else {
-        mvn clean package -q
-    }
-    
-    if ($LASTEXITCODE -ne 0) {
-        throw "Maven build failed"
-    }
-} catch {
-    Write-Host "❌ Maven build failed. Run with -Verbose for more details." -ForegroundColor Red
-    Set-Location ..
-    Read-Host "Press Enter to exit"
+# Java prüfen via cmd.exe
+$javaOutput = cmd.exe /c "java -version 2>&1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Java nicht gefunden. Bitte Java 11+ installieren."
+    Write-Host "Download: https://adoptium.net/" -ForegroundColor Yellow
+    Pause
     exit 1
 }
+$javaLine = ($javaOutput | Select-Object -First 1).Trim()
+Write-Host "Java found: $javaLine" -ForegroundColor Green
 
-# Check if JAR was created
-$jarPath = "target\confluence-rag-chatbot-1.0.0.jar"
-if (Test-Path $jarPath) {
-    Write-Host "✅ Confluence app built successfully!" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "📁 JAR location: confluence-app\$($jarPath)" -ForegroundColor White
-    
-    $fileSize = (Get-Item $jarPath).Length
-    $fileSizeMB = [math]::Round($fileSize / 1MB, 2)
-    Write-Host "📏 File size: $fileSizeMB MB" -ForegroundColor White
-    Write-Host ""
-    Write-Host "🎉 Ready for installation!" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "📋 Next steps:" -ForegroundColor Cyan
-    Write-Host "1. Upload the JAR file to your Confluence Data Center:" -ForegroundColor White
-    Write-Host "   - Go to Confluence Administration → Manage Apps" -ForegroundColor Gray
-    Write-Host "   - Click 'Upload app'" -ForegroundColor Gray
-    Write-Host "   - Select: confluence-app\$($jarPath)" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "2. Configure the app:" -ForegroundColor White
-    Write-Host "   - Go to Administration → RAG Chatbot Configuration" -ForegroundColor Gray
-    Write-Host "   - Enter your AWS credentials and endpoints" -ForegroundColor Gray
-    Write-Host "   - Add knowledge sources (Confluence sites, PDFs, websites)" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "3. Test the installation:" -ForegroundColor White
-    Write-Host "   - Add the /rag macro to any Confluence page" -ForegroundColor Gray
-    Write-Host "   - Or use the chat widget in the sidebar" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "📖 For AWS infrastructure setup (optional):" -ForegroundColor Cyan
-    Write-Host "   - If you need AWS infrastructure, install AWS CLI first" -ForegroundColor Gray
-    Write-Host "   - Then run: .\deploy.ps1 for full deployment" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "🔧 Manual AWS setup:" -ForegroundColor Cyan
-    Write-Host "   - You can set up AWS resources manually via console" -ForegroundColor Gray
-    Write-Host "   - Configure the app with your AWS endpoints in the admin interface" -ForegroundColor Gray
+# Java-Version extrahieren und prüfen
+$match = [regex]::Match($javaLine, '"?(\d+)(?:\.(\d+))?')
+if ($match.Success) {
+    $major = [int]$match.Groups[1].Value
+    # For Java 9+, the version number is just the major version (e.g., 11, 17, 21)
+    # For Java 8 and below, it's 1.x format
+    if ($major -eq 1 -and $match.Groups[2].Success) {
+        $major = [int]$match.Groups[2].Value
+    }
+    if ($major -lt 11) {
+        Write-Error "Java 11+ erforderlich. Gefunden: $major"
+        Pause
+        exit 1
+    }
+    Write-Host "Java version: $major (OK)" -ForegroundColor Green
 } else {
-    Write-Host "❌ Failed to build Confluence app" -ForegroundColor Red
-    Write-Host "Check the Maven output above for errors" -ForegroundColor Yellow
-    Set-Location ..
-    Read-Host "Press Enter to exit"
+    Write-Warning "Konnte Java-Version nicht parsen. Fortsetzung auf eigene Gefahr."
+}
+
+# 2) Build
+$appDir = 'confluence-app'
+if (-not (Test-Path $appDir -PathType Container)) {
+    Write-Error "Verzeichnis '$appDir' existiert nicht."
+    exit 1
+}
+Push-Location $appDir
+
+Write-Host 'Running Maven clean & package...' -ForegroundColor Cyan
+$mvnArgs = @('clean','package')
+if (-not $Verbose) { $mvnArgs += '-q' }
+# Maven via cmd.exe für konsistente Stream-Behandlung
+cmd.exe /c "mvn $($mvnArgs -join ' ') 2>&1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Maven Build fehlgeschlagen. Mit -Verbose mehr Details."
+    Pop-Location
+    Pause
     exit 1
 }
 
-Set-Location ..
-Write-Host ""
-Read-Host "Press Enter to continue"
+# 3) Ergebnis prüfen
+$jar = "target\confluence-rag-chatbot-$Version.jar"
+if (Test-Path $jar) {
+    $sizeMB = [math]::Round((Get-Item $jar).Length /1MB, 2)
+    Write-Host "Build erfolgreich: $jar ($($sizeMB) MB)" -ForegroundColor Green
+} else {
+    Write-Error "JAR nicht gefunden: $jar"
+    Pop-Location
+    Pause
+    exit 1
+}
+
+Pop-Location
+Pause 'Fertig. Enter zum Beenden...'
