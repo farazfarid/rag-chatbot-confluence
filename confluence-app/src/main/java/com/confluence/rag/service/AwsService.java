@@ -3,7 +3,6 @@ package com.confluence.rag.service;
 import com.confluence.rag.api.AwsServiceInterface;
 import com.confluence.rag.model.DocumentProcessingRequest;
 
-import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * AWS service implementation for integrating with AWS services
  */
 @Named
-@Component
 public class AwsService implements AwsServiceInterface {
     
     private static final Logger LOG = LoggerFactory.getLogger(AwsService.class);

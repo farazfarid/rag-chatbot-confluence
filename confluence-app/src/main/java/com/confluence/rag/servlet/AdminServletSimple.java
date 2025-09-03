@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * Simplified Admin Servlet for RAG Chatbot configuration
  * This version works without Atlassian dependencies
  */
-public class AdminServlet extends HttpServlet {
+public class AdminServletSimple extends HttpServlet {
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 

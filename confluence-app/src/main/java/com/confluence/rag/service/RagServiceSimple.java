@@ -1,7 +1,10 @@
 package com.confluence.rag.service;
 
 import com.confluence.rag.api.RagServiceInterface;
+import com.confluence.rag.model.ChatRequest;
+import com.confluence.rag.model.ChatResponse;
 import com.confluence.rag.model.DocumentProcessingRequest;
+import com.confluence.rag.model.DocumentProcessingResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,36 +44,36 @@ public class RagServiceSimple implements RagServiceInterface {
     }
     
     @Override
-    public String processQuery(String query, String spaceKey) {
-        if (query == null || query.trim().isEmpty()) {
-            return "Please provide a valid question.";
+    public ChatResponse processChat(ChatRequest request) {
+        if (request == null || request.getMessage() == null || request.getMessage().trim().isEmpty()) {
+            return new ChatResponse("Please provide a valid question.", false);
         }
         
-        logger.info("Processing query: {}", query);
+        logger.info("Processing chat request: {}", request.getMessage());
         
         try {
             // Simulate RAG processing
-            List<String> documents = searchRelevantDocuments(query);
+            List<String> documents = searchDocuments(request.getMessage(), 3);
             String context = buildContext(documents);
-            String response = generateResponse(query, context);
+            String responseText = generateResponse(request.getMessage(), context);
             
-            logger.info("Successfully processed query");
-            return response;
+            logger.info("Successfully processed chat request");
+            return new ChatResponse(responseText, true);
             
         } catch (Exception e) {
-            logger.error("Error processing query", e);
-            return "I apologize, but I encountered an error while processing your question. Please try again or contact your administrator.";
+            logger.error("Error processing chat request", e);
+            return new ChatResponse("I apologize, but I encountered an error while processing your question. Please try again or contact your administrator.", false);
         }
     }
     
     @Override
-    public void indexDocument(DocumentProcessingRequest request) {
+    public DocumentProcessingResponse processDocument(DocumentProcessingRequest request) {
         if (request == null || request.getContent() == null) {
             logger.warn("Invalid document processing request");
-            return;
+            return new DocumentProcessingResponse(false, "Invalid document request");
         }
         
-        logger.info("Indexing document: {}", request.getDocumentId());
+        logger.info("Processing document: {}", request.getDocumentId());
         
         try {
             // Simulate document processing
@@ -83,14 +86,59 @@ public class RagServiceSimple implements RagServiceInterface {
                 logger.debug("Processing chunk {} of document {}", i + 1, request.getDocumentId());
             }
             
-            logger.info("Successfully indexed document: {}", request.getDocumentId());
+            logger.info("Successfully processed document: {}", request.getDocumentId());
+            return new DocumentProcessingResponse(true, "Document processed successfully");
             
         } catch (Exception e) {
-            logger.error("Error indexing document: " + request.getDocumentId(), e);
+            logger.error("Error processing document: " + request.getDocumentId(), e);
+            return new DocumentProcessingResponse(false, "Error processing document: " + e.getMessage());
         }
     }
     
     @Override
+    public List<String> searchDocuments(String query, int maxResults) {
+        List<String> documents = new ArrayList<>();
+        
+        try {
+            // Mock relevant documents based on query keywords
+            if (query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud")) {
+                documents.add("AWS best practices and guidelines for cloud deployment...");
+                documents.add("Cloud security considerations and recommendations...");
+            }
+            
+            if (query.toLowerCase().contains("confluence") || query.toLowerCase().contains("wiki")) {
+                documents.add("Confluence user guide and administration tips...");
+                documents.add("Wiki content management and collaboration features...");
+            }
+            
+            if (documents.isEmpty()) {
+                documents.add("General information and helpful resources...");
+            }
+            
+            // Limit results
+            if (documents.size() > maxResults) {
+                documents = documents.subList(0, maxResults);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error searching documents", e);
+            documents.add("Error occurred while searching documents");
+        }
+        
+        return documents;
+    }
+    
+    @Override
+    public boolean isHealthy() {
+        try {
+            // Simple health check
+            return config != null && !config.isEmpty();
+        } catch (Exception e) {
+            logger.error("Health check failed", e);
+            return false;
+        }
+    }
+    
     public List<String> getKnowledgeSources() {
         List<String> sources = new ArrayList<>();
         
@@ -126,7 +174,6 @@ public class RagServiceSimple implements RagServiceInterface {
         return sources;
     }
     
-    @Override
     public void syncContent() {
         logger.info("Starting content synchronization");
         
@@ -150,28 +197,6 @@ public class RagServiceSimple implements RagServiceInterface {
         } catch (Exception e) {
             logger.error("Error during content synchronization", e);
         }
-    }
-    
-    private List<String> searchRelevantDocuments(String query) {
-        // Simulate document search
-        List<String> documents = new ArrayList<>();
-        
-        // Mock relevant documents based on query keywords
-        if (query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud")) {
-            documents.add("AWS best practices and guidelines for cloud deployment...");
-            documents.add("Cloud security considerations and recommendations...");
-        }
-        
-        if (query.toLowerCase().contains("confluence") || query.toLowerCase().contains("wiki")) {
-            documents.add("Confluence user guide and administration tips...");
-            documents.add("Wiki content management and collaboration features...");
-        }
-        
-        if (documents.isEmpty()) {
-            documents.add("General information and helpful resources...");
-        }
-        
-        return documents;
     }
     
     private String buildContext(List<String> documents) {

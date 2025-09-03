@@ -12,6 +12,8 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * REST API for RAG Chatbot operations
  */
@@ -92,9 +94,9 @@ public class RagRestResource {
             
             java.util.List<String> results = ragService.searchDocuments(query, limit);
             
+            ObjectMapper mapper = new ObjectMapper();
             return Response.ok()
-                .entity("{\"results\": " + 
-                    com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(results) + "}")
+                .entity("{\"results\": " + mapper.writeValueAsString(results) + "}")
                 .build();
                 
         } catch (Exception e) {
