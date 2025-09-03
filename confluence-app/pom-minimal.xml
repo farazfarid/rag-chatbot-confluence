@@ -16,36 +16,13 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <confluence.version>7.19.0</confluence.version>
         <jackson.version>2.15.2</jackson.version>
     </properties>
 
     <dependencies>
-        <!-- Confluence Dependencies -->
-        <dependency>
-            <groupId>com.atlassian.confluence</groupId>
-            <artifactId>confluence</artifactId>
-            <version>${confluence.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.activation</groupId>
-                    <artifactId>activation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.activation</groupId>
-                    <artifactId>javax.activation-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!-- Only essential dependencies that are guaranteed to be available -->
         
-        <dependency>
-            <groupId>com.atlassian.sal</groupId>
-            <artifactId>sal-api</artifactId>
-            <version>4.4.0</version>
-            <scope>provided</scope>
-        </dependency>
-
+        <!-- Servlet API (provided by Confluence) -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -60,16 +37,16 @@
             <version>4.5.14</version>
         </dependency>
 
-        <!-- JSON Processing -->
+        <!-- JSON Processing - Core Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
+            <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
 
@@ -79,7 +56,7 @@
             <version>${jackson.version}</version>
         </dependency>
 
-        <!-- Logging -->
+        <!-- Minimal Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -118,16 +95,15 @@
                             <Atlassian-Plugin-Key>com.confluence.rag.confluence-rag-chatbot</Atlassian-Plugin-Key>
                             <Atlassian-Plugin-Name>Confluence RAG Chatbot</Atlassian-Plugin-Name>
                             <Atlassian-Plugin-Version>1.0.0</Atlassian-Plugin-Version>
-                            <Atlassian-Plugin-Description>AI-powered RAG chatbot for Confluence using AWS services</Atlassian-Plugin-Description>
                             <Bundle-Name>Confluence RAG Chatbot</Bundle-Name>
                             <Bundle-SymbolicName>com.confluence.rag.confluence-rag-chatbot</Bundle-SymbolicName>
                             <Bundle-Version>1.0.0</Bundle-Version>
-                            <Bundle-Vendor>Confluence RAG</Bundle-Vendor>
                         </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
 
+            <!-- Shade plugin to include dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -140,6 +116,7 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -147,6 +124,8 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/LICENSE*</exclude>
+                                        <exclude>META-INF/NOTICE*</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -163,76 +142,4 @@
             </resource>
         </resources>
     </build>
-
-    <repositories>
-        <repository>
-            <id>central</id>
-            <name>Maven Central Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <layout>default</layout>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-        </repository>
-        <repository>
-            <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/mvn/maven-external/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-        </repository>
-        <repository>
-            <id>atlassian-private</id>
-            <url>https://maven.atlassian.com/repository/public</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/mvn/maven-external/</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-            <id>atlassian-private</id>
-            <url>https://maven.atlassian.com/repository/public</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
