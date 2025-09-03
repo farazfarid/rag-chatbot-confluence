@@ -1,202 +1,187 @@
-# Confluence RAG Chatbot
+# Confluence RAG Chatbot - AWS Privacy-First Solution
 
-🤖 A fully-featured AI-powered chatbot for Confluence that leverages AWS services for RAG (Retrieval-Augmented Generation) capabilities.
-
-## ✨ Features
-
-- **Modern Blue & White UI**: Beautiful, responsive chatbot interface
-- **RAG Functionality**: Intelligent responses based on your knowledge base
-- **Multi-Source Support**: Upload files, add websites, and Confluence pages
-- **AWS Powered**: Uses S3, OpenSearch, and Bedrock for scalable AI
-- **Admin Panel**: Comprehensive settings and document management
-- **File Support**: PDF, Word documents, text files, and web scraping
-- **Vector Search**: Semantic search using embeddings
-- **Customizable**: Theme colors, welcome messages, and chatbot name
-- **Secure**: Admin-only access to settings and document management
+A privacy-focused RAG (Retrieval-Augmented Generation) chatbot for Confluence Data Center that uses AWS services for secure document processing and AI capabilities.
 
 ## 🏗️ Architecture
 
-```
-Confluence App
-    ↓
-Forge Runtime
-    ↓
-AWS Services:
-- S3 (Document Storage)
-- OpenSearch (Vector Search)
-- Bedrock (AI/Embeddings)
-- Lambda (Processing)
-```
+This solution uses AWS services to ensure data privacy:
+- **AWS Bedrock**: For LLM inference (stays within AWS)
+- **AWS OpenSearch**: Vector database for embeddings
+- **AWS Lambda**: Serverless processing functions
+- **AWS S3**: Secure document storage
+- **AWS API Gateway**: RESTful API endpoints
+- **AWS IAM**: Fine-grained access control
 
-## 🚀 Quick Start
+## 📋 Prerequisites
 
-### Prerequisites
+### Confluence Data Center
+- Confluence Data Center 7.0+ (for JAR/OBR support)
+- Administrator access to install apps
 
-1. **Node.js** (v18+)
-2. **AWS CLI** configured with appropriate permissions
-3. **Forge CLI**: `npm install -g @forge/cli`
-4. **AWS Account** with access to:
-   - S3
-   - OpenSearch
-   - Bedrock (Claude models)
-   - Lambda
-   - CloudFormation
+### For JAR Only Build (Recommended for Testing)
+- Java 11+
+- Maven 3.6+
+- ❌ **NO AWS CLI needed** - configure via admin interface
 
-### Installation
+### For Full Automated Deployment
+- AWS Account with appropriate permissions
+- AWS CLI installed and configured
+- AWS CDK installed (`npm install -g aws-cdk`)
+- Java 11+ (for Confluence app development)
+- Maven 3.6+
+- Node.js 16+ (for AWS infrastructure)
 
-1. **Clone and setup:**
+## 🚀 Installation Guide
+
+### Quick Start (JAR Only - No AWS CLI Required)
+
+**Perfect for testing or if you prefer manual AWS setup:**
+
+1. **Build the Confluence app:**
    ```bash
-   git clone <repository-url>
+   ./build-jar.sh
+   ```
+
+2. **Upload to Confluence:**
+   - Go to Confluence Administration → Manage Apps → Upload App
+   - Select: `confluence-app/target/confluence-rag-chatbot-1.0.0.jar`
+
+3. **Configure via admin interface:**
+   - Go to Administration → RAG Chatbot Configuration
+   - Enter your AWS credentials and endpoints
+   - Add knowledge sources
+
+### Full Automated Deployment (AWS CLI Required)
+
+**For complete infrastructure automation:**
+
+### Step 1: Deploy AWS Infrastructure
+
+1. **Clone and setup the project:**
+   ```bash
+   git clone <your-repo>
    cd confluence-rag-chatbot
    npm install
    ```
 
-2. **Deploy infrastructure and app:**
+2. **Configure AWS credentials:**
+   ```bash
+   aws configure
+   # Enter your AWS Access Key ID, Secret, and preferred region
+   ```
+
+3. **Deploy everything:**
    ```bash
    ./deploy.sh
    ```
 
-3. **Install in Confluence:**
-   ```bash
-   forge install
-   ```
+### Step 2: Manual AWS Setup (Alternative)
 
-4. **Configure admin access:**
-   - Update `.env` with your admin account IDs
-   - Redeploy: `forge deploy`
+If you prefer to set up AWS manually, see [DEPLOYMENT_OPTIONS.md](DEPLOYMENT_OPTIONS.md) for detailed instructions.
 
-## 🎛️ Admin Panel
+The chatbot supports multiple knowledge sources:
 
-Access the admin panel through Confluence (admin users only):
+#### Confluence Sites
+- Add multiple Confluence base URLs
+- Configure authentication (basic auth, personal access tokens)
+- Set up synchronization schedules
 
-### Settings Management
-- **Chatbot Name**: Customize the assistant's name
-- **Welcome Message**: Set the initial greeting
-- **Theme Colors**: Customize the blue and white theme
-- **AWS Configuration**: Manage service endpoints
+#### PDF Files
+- Upload PDFs directly through the admin interface
+- Bulk upload via S3 bucket integration
 
-### Document Management
-- **Upload Files**: PDF, Word, text documents
-- **Add Websites**: Scrape public websites and Confluence pages
-- **View Documents**: See all indexed content
-- **Delete Content**: Remove documents from knowledge base
+#### External Websites
+- Add website URLs for crawling
+- Configure crawl depth and filters
+- Set up refresh schedules
+
+## 🔧 Configuration
+
+### AWS Configuration
+Edit `confluence-app/src/main/resources/application.properties`:
+
+```properties
+# AWS Configuration
+aws.region=us-east-1
+aws.bedrock.model=anthropic.claude-3-sonnet-20240229-v1:0
+aws.opensearch.endpoint=https://your-opensearch-domain.region.es.amazonaws.com
+aws.s3.bucket=your-confluence-rag-bucket
+
+# API Gateway
+aws.api.gateway.url=https://your-api-id.execute-api.region.amazonaws.com/prod
+```
+
+### Knowledge Base Settings
+- **Confluence Sites:** Supports both Cloud and Data Center instances
+- **Document Processing:** Automatic chunking and embedding generation
+- **Refresh Intervals:** Configurable sync schedules (hourly, daily, weekly)
+
+## 🔒 Privacy & Security Features
+
+- **AWS-Only Processing:** All data stays within your AWS account
+- **VPC Deployment:** Optional VPC deployment for additional isolation
+- **Encryption:** Data encrypted at rest and in transit
+- **IAM Policies:** Fine-grained access control
+- **Audit Logging:** Comprehensive logging via CloudWatch
 
 ## 🤖 Usage
 
-### For End Users
-1. Navigate to any Confluence page
-2. Find the "AI Knowledge Assistant" in the homepage feed
-3. Start chatting with the AI assistant
-4. Ask questions about your uploaded knowledge base
+1. **In Confluence pages:** Use the `/rag` macro to add chatbot interface
+2. **Sidebar widget:** Access chatbot from any page via sidebar
+3. **API Access:** Direct API access for custom integrations
 
-### For Admins
-1. Access the "RAG Chatbot Admin" page (admin-only)
-2. Upload documents or add websites
-3. Customize chatbot settings
-4. Monitor and manage the knowledge base
+## 📊 Monitoring
 
-## 🔧 Development
+- **CloudWatch Dashboards:** Monitor usage and performance
+- **X-Ray Tracing:** Distributed tracing for debugging
+- **Cost Monitoring:** Track AWS costs per feature
 
-### Local Development
+## 🔄 Updating
+
+### Update AWS Infrastructure:
 ```bash
-# Start development tunnel
-forge tunnel
-
-# View logs
-forge logs
-
-# Lint code
-npm run lint
+cd aws-infrastructure
+cdk deploy --all
 ```
 
-### Deployment
+### Update Confluence App:
 ```bash
-# Deploy changes
-forge deploy
-
-# Update AWS infrastructure
-./deploy.sh
+cd confluence-app
+mvn clean package
+# Upload new JAR through Confluence admin interface
 ```
 
-## 🛠️ Supported File Types
-
-- **PDF**: Automatic text extraction
-- **Word Documents**: .docx and .doc files
-- **Text Files**: Plain text content
-- **Websites**: Public URLs and Confluence pages
-- **HTML**: Web content with automatic cleaning
-
-## 🌐 AWS Services Used
-
-### S3 (Simple Storage Service)
-- Document storage and retrieval
-- Versioning and lifecycle management  
-- Secure encrypted storage
-
-### OpenSearch
-- Vector similarity search
-- Full-text search capabilities
-- Document indexing and retrieval
-
-### Bedrock
-- Claude 3 Sonnet for chat responses
-- Titan embeddings for vector generation
-- Serverless AI inference
-
-## 🔒 Security Features
-
-- **Admin-Only Access**: Settings restricted to configured admins
-- **Encrypted Storage**: S3 encryption at rest
-- **HTTPS Endpoints**: All communications encrypted
-- **IAM Roles**: Least-privilege AWS access
-- **Input Validation**: Secure document processing
-
-## 🎨 Customization
-
-### Theme Customization
-Modify colors in the admin panel:
-- Primary Color (default: #1976d2)
-- Secondary Color (default: #ffffff)
-- Text Color (default: #333333)
-- Background Color (default: #f5f5f5)
-
-### Chatbot Personality
-- Welcome Message
-- Chatbot Name
-- Response Style (via prompt engineering)
-
-## 🚨 Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-1. **AWS Permissions**
-   - Ensure IAM user has required permissions
-   - Check Bedrock model access in your region
+1. **"No AWS credentials found"**
+   - Verify AWS CLI configuration
+   - Check IAM permissions
 
-2. **Document Processing**
-   - Verify S3 bucket exists and is accessible
-   - Check OpenSearch cluster health
+2. **"OpenSearch connection failed"**
+   - Verify VPC settings if using VPC deployment
+   - Check security group configurations
 
-3. **Chat Responses**
-   - Confirm Bedrock model availability
-   - Check OpenSearch index exists
+3. **"Confluence authentication failed"**
+   - Verify personal access tokens
+   - Check network connectivity from AWS to Confluence
 
-### Error Messages
-- Check Forge logs: `forge logs`
-- Review AWS CloudWatch logs
-- Verify environment variables
+### Support
+- Check CloudWatch logs for detailed error messages
+- Enable debug logging in Confluence app configuration
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see LICENSE file for details.
 
-## 🆘 Support
+## 🤝 Contributing
 
-- **Documentation**: Check this README
-- **Logs**: Use `forge logs` for debugging
-- **AWS Issues**: Check CloudWatch logs
-- **Forge Issues**: See [Forge documentation](https://developer.atlassian.com/platform/forge/)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ---
 
-**Built with ❤️ using Atlassian Forge and AWS AI Services**
+For technical support, please check the troubleshooting section or create an issue in the repository.

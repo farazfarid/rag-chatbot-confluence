@@ -1,0 +1,36 @@
+<div id="rag-chat-widget" class="rag-chat-container">
+    <div class="rag-chat-header">
+        <h3>AI Assistant</h3>
+        <button class="rag-chat-toggle" id="rag-chat-toggle">
+            <span class="aui-icon aui-icon-small aui-iconfont-comment">Chat</span>
+        </button>
+    </div>
+    
+    <div class="rag-chat-panel" id="rag-chat-panel" style="display: none;">
+        <div class="rag-chat-messages" id="rag-chat-messages">
+            <div class="rag-chat-message rag-chat-bot-message">
+                <div class="rag-chat-message-content">
+                    <p>Hello! I'm your AI assistant. I can help you find information from your Confluence documentation and other knowledge sources. How can I help you today?</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="rag-chat-input-container">
+            <form id="rag-chat-form" class="rag-chat-form">
+                <input type="text" id="rag-chat-input" class="rag-chat-input" placeholder="Ask me anything..." autocomplete="off">
+                <button type="submit" class="rag-chat-send-btn" id="rag-chat-send">
+                    <span class="aui-icon aui-icon-small aui-iconfont-devtools-arrow-right">Send</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    AJS.$(document).ready(function() {
+        // Initialize chat widget
+        if (typeof window.RagChatWidget !== 'undefined') {
+            window.RagChatWidget.init();
+        }
+    });
+</script>

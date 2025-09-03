@@ -1,201 +1,145 @@
 #!/bin/bash
 
 # Confluence RAG Chatbot Deployment Script
-# This script sets up AWS infrastructure and deploys the Confluence app
+# This script deploys the complete AWS infrastructure and builds the Confluence app
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "🚀 Starting Confluence RAG Chatbot deployment..."
 
-# Configuration
-STACK_NAME="confluence-rag-chatbot"
-ENVIRONMENT="dev"
-AWS_REGION="us-east-1"
+# Check prerequisites
+echo "📋 Checking prerequisites..."
 
-echo -e "${BLUE}🚀 Starting Confluence RAG Chatbot Deployment${NC}"
-
-# Check if AWS CLI is installed
 if ! command -v aws &> /dev/null; then
-    echo -e "${RED}❌ AWS CLI is not installed. Please install it first.${NC}"
+    echo "❌ AWS CLI is not installed. Please install it first."
     exit 1
 fi
 
-# Check if Forge CLI is installed
-if ! command -v forge &> /dev/null; then
-    echo -e "${RED}❌ Forge CLI is not installed. Please install it first.${NC}"
-    echo -e "${YELLOW}Run: npm install -g @forge/cli${NC}"
+if ! command -v cdk &> /dev/null; then
+    echo "❌ AWS CDK is not installed. Installing..."
+    npm install -g aws-cdk
+fi
+
+if ! command -v mvn &> /dev/null; then
+    echo "❌ Maven is not installed. Please install Maven 3.6+ first."
+    exit 1
+fi
+
+if ! command -v java &> /dev/null; then
+    echo "❌ Java is not installed. Please install Java 11+ first."
     exit 1
 fi
 
 # Check AWS credentials
-echo -e "${BLUE}🔐 Checking AWS credentials...${NC}"
+echo "🔑 Checking AWS credentials..."
 if ! aws sts get-caller-identity &> /dev/null; then
-    echo -e "${RED}❌ AWS credentials not configured. Please run 'aws configure'${NC}"
+    echo "❌ AWS credentials not configured. Please run 'aws configure' first."
     exit 1
 fi
 
-echo -e "${GREEN}✅ AWS credentials verified${NC}"
+AWS_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+AWS_REGION=$(aws configure get region)
 
-# Install dependencies
-echo -e "${BLUE}📦 Installing dependencies...${NC}"
-npm install
-
-echo -e "${GREEN}✅ Dependencies installed${NC}"
+echo "✅ AWS Account: $AWS_ACCOUNT"
+echo "✅ AWS Region: $AWS_REGION"
 
 # Deploy AWS Infrastructure
-echo -e "${BLUE}🏗️  Deploying AWS infrastructure...${NC}"
+echo "🏗️  Deploying AWS infrastructure..."
+cd aws-infrastructure
 
-# Check if stack exists
-if aws cloudformation describe-stacks --stack-name "$STACK_NAME-$ENVIRONMENT" --region "$AWS_REGION" &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Stack exists, updating...${NC}"
-    aws cloudformation update-stack \
-        --stack-name "$STACK_NAME-$ENVIRONMENT" \
-        --template-body file://aws/cloudformation-template.yml \
-        --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --region "$AWS_REGION"
-    
-    echo -e "${BLUE}⏳ Waiting for stack update to complete...${NC}"
-    aws cloudformation wait stack-update-complete \
-        --stack-name "$STACK_NAME-$ENVIRONMENT" \
-        --region "$AWS_REGION"
+# Install dependencies
+echo "📦 Installing CDK dependencies..."
+npm install
+
+# Bootstrap CDK (if needed)
+echo "🎯 Bootstrapping CDK..."
+cdk bootstrap aws://$AWS_ACCOUNT/$AWS_REGION
+
+# Create Lambda deployment packages
+echo "📦 Creating Lambda deployment packages..."
+
+# Document processor
+cd lambda/document-processor
+pip install -r requirements.txt -t .
+zip -r ../../document-processor.zip . -x "*.pyc" "__pycache__/*"
+cd ../..
+
+# Chat processor  
+cd lambda/chat-processor
+pip install -r requirements.txt -t .
+zip -r ../../chat-processor.zip . -x "*.pyc" "__pycache__/*"
+cd ../..
+
+# Deploy stacks
+echo "🚀 Deploying CDK stacks..."
+cdk deploy --all --require-approval never
+
+# Get outputs
+echo "📄 Getting deployment outputs..."
+API_GATEWAY_URL=$(aws cloudformation describe-stacks --stack-name ConfluenceRagLambdaStack --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text)
+OPENSEARCH_ENDPOINT=$(aws cloudformation describe-stacks --stack-name ConfluenceRagOpenSearchStack --query 'Stacks[0].Outputs[?OutputKey==`OpenSearchCollectionEndpoint`].OutputValue' --output text)
+S3_BUCKET=$(aws cloudformation describe-stacks --stack-name ConfluenceRagStack --query 'Stacks[0].Outputs[?OutputKey==`DocumentsBucketName`].OutputValue' --output text)
+
+echo "✅ API Gateway URL: $API_GATEWAY_URL"
+echo "✅ OpenSearch Endpoint: $OPENSEARCH_ENDPOINT"
+echo "✅ S3 Bucket: $S3_BUCKET"
+
+cd ..
+
+# Build Confluence App
+echo "🔨 Building Confluence app..."
+cd confluence-app
+
+# Update application.properties with actual values
+echo "⚙️  Updating configuration..."
+sed -i.bak "s|aws.region=.*|aws.region=$AWS_REGION|g" src/main/resources/application.properties
+sed -i.bak "s|aws.opensearch.endpoint=.*|aws.opensearch.endpoint=$OPENSEARCH_ENDPOINT|g" src/main/resources/application.properties
+sed -i.bak "s|aws.s3.bucket=.*|aws.s3.bucket=$S3_BUCKET|g" src/main/resources/application.properties
+sed -i.bak "s|aws.api.gateway.url=.*|aws.api.gateway.url=$API_GATEWAY_URL|g" src/main/resources/application.properties
+
+# Build JAR
+echo "📦 Building Confluence app JAR..."
+mvn clean package
+
+if [ -f "target/confluence-rag-chatbot-1.0.0.jar" ]; then
+    echo "✅ Confluence app built successfully!"
+    echo "📁 JAR location: confluence-app/target/confluence-rag-chatbot-1.0.0.jar"
 else
-    echo -e "${YELLOW}🆕 Creating new stack...${NC}"
-    aws cloudformation create-stack \
-        --stack-name "$STACK_NAME-$ENVIRONMENT" \
-        --template-body file://aws/cloudformation-template.yml \
-        --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --region "$AWS_REGION"
-    
-    echo -e "${BLUE}⏳ Waiting for stack creation to complete...${NC}"
-    aws cloudformation wait stack-create-complete \
-        --stack-name "$STACK_NAME-$ENVIRONMENT" \
-        --region "$AWS_REGION"
+    echo "❌ Failed to build Confluence app"
+    exit 1
 fi
 
-echo -e "${GREEN}✅ AWS infrastructure deployed successfully${NC}"
-
-# Get stack outputs
-echo -e "${BLUE}📋 Retrieving stack outputs...${NC}"
-OUTPUTS=$(aws cloudformation describe-stacks \
-    --stack-name "$STACK_NAME-$ENVIRONMENT" \
-    --region "$AWS_REGION" \
-    --query 'Stacks[0].Outputs')
-
-S3_BUCKET=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="S3BucketName") | .OutputValue')
-OPENSEARCH_ENDPOINT=$(echo "$OUTPUTS" | jq -r '.[] | select(.OutputKey=="OpenSearchEndpoint") | .OutputValue')
-
-echo -e "${GREEN}✅ S3 Bucket: $S3_BUCKET${NC}"
-echo -e "${GREEN}✅ OpenSearch Endpoint: $OPENSEARCH_ENDPOINT${NC}"
-
-# Create environment configuration
-echo -e "${BLUE}⚙️  Creating environment configuration...${NC}"
-cat > .env << EOF
-# AWS Configuration
-AWS_REGION=$AWS_REGION
-S3_BUCKET_NAME=$S3_BUCKET
-OPENSEARCH_ENDPOINT=https://$OPENSEARCH_ENDPOINT
-BEDROCK_MODEL_ID=anthropic.claude-3-sonnet-20240229-v1:0
-
-# Environment
-ENVIRONMENT=$ENVIRONMENT
-
-# Admin Account IDs (replace with actual account IDs)
-ADMIN_ACCOUNT_ID_1=your-admin-account-id-1
-ADMIN_ACCOUNT_ID_2=your-admin-account-id-2
-EOF
-
-echo -e "${GREEN}✅ Environment configuration created${NC}"
-
-# Build the Confluence app
-echo -e "${BLUE}🔨 Building Confluence app...${NC}"
-forge build
-
-echo -e "${GREEN}✅ App built successfully${NC}"
-
-# Deploy the Confluence app
-echo -e "${BLUE}🚀 Deploying Confluence app...${NC}"
-
-# Check if app is already installed
-if forge list | grep -q "confluence-rag-chatbot"; then
-    echo -e "${YELLOW}⚠️  App already installed, updating...${NC}"
-    forge deploy
-else
-    echo -e "${YELLOW}🆕 Installing new app...${NC}"
-    forge deploy
-    echo -e "${BLUE}📝 Don't forget to install the app in your Confluence site!${NC}"
-    echo -e "${BLUE}Run: forge install${NC}"
-fi
-
-echo -e "${GREEN}✅ Confluence app deployed successfully${NC}"
-
-# Setup OpenSearch index
-echo -e "${BLUE}🔍 Setting up OpenSearch index...${NC}"
-
-# Create index mapping
-curl -X PUT "https://$OPENSEARCH_ENDPOINT/confluence-rag-documents" \
-    -H "Content-Type: application/json" \
-    -d '{
-        "mappings": {
-            "properties": {
-                "content": {
-                    "type": "text",
-                    "analyzer": "standard"
-                },
-                "title": {
-                    "type": "text",
-                    "analyzer": "standard"
-                },
-                "source": {
-                    "type": "keyword"
-                },
-                "type": {
-                    "type": "keyword"
-                },
-                "documentId": {
-                    "type": "keyword"
-                },
-                "chunkIndex": {
-                    "type": "integer"
-                },
-                "embedding": {
-                    "type": "dense_vector",
-                    "dims": 1536
-                },
-                "timestamp": {
-                    "type": "date"
-                }
-            }
-        },
-        "settings": {
-            "index": {
-                "number_of_shards": 1,
-                "number_of_replicas": 0,
-                "knn": true,
-                "knn.algo_param.ef_search": 100
-            }
-        }
-    }' 2>/dev/null || echo -e "${YELLOW}⚠️  Index might already exist${NC}"
-
-echo -e "${GREEN}✅ OpenSearch index configured${NC}"
+cd ..
 
 # Final instructions
-echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
-echo -e "${BLUE}📝 Next steps:${NC}"
-echo -e "${YELLOW}1. Update the admin account IDs in .env file${NC}"
-echo -e "${YELLOW}2. Run 'forge install' to install the app in your Confluence site${NC}"
-echo -e "${YELLOW}3. Configure AWS credentials for the app if needed${NC}"
-echo -e "${YELLOW}4. Test the chatbot functionality${NC}"
-
-echo -e "${BLUE}🔗 Useful commands:${NC}"
-echo -e "${YELLOW}- View logs: forge logs${NC}"
-echo -e "${YELLOW}- Update app: forge deploy${NC}"
-echo -e "${YELLOW}- Uninstall app: forge uninstall${NC}"
-
-echo -e "${GREEN}✨ Happy chatting with your AI Knowledge Assistant!${NC}"
+echo ""
+echo "🎉 Deployment completed successfully!"
+echo ""
+echo "📋 Next steps:"
+echo "1. Upload the JAR file to your Confluence Data Center:"
+echo "   File: confluence-app/target/confluence-rag-chatbot-1.0.0.jar"
+echo ""
+echo "2. Configure the app in Confluence Administration:"
+echo "   - Go to Manage Apps → RAG Chatbot Configuration"
+echo "   - Enter your AWS credentials and verify the auto-configured endpoints"
+echo ""
+echo "3. Test the installation:"
+echo "   - Add the /rag macro to any Confluence page"
+echo "   - Or use the chat widget in the sidebar"
+echo ""
+echo "📊 AWS Resources Created:"
+echo "   - VPC with public/private subnets"
+echo "   - OpenSearch Serverless collection for vector storage"
+echo "   - S3 bucket for document storage"
+echo "   - Lambda functions for document processing and chat"
+echo "   - API Gateway for REST endpoints"
+echo "   - IAM roles and policies"
+echo ""
+echo "💰 Estimated monthly cost: $50-200 (depending on usage)"
+echo ""
+echo "🔗 Useful links:"
+echo "   - API Gateway: https://console.aws.amazon.com/apigateway/home?region=$AWS_REGION"
+echo "   - OpenSearch: https://console.aws.amazon.com/aos/home?region=$AWS_REGION"
+echo "   - S3 Bucket: https://console.aws.amazon.com/s3/buckets/$S3_BUCKET?region=$AWS_REGION"
+echo ""
+echo "For support, check the README.md file or create an issue in the repository."

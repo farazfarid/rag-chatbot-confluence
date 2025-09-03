@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <version>${project.version}</version>
+        <vendor name="RAG Solutions" url="https://github.com/farazfarid/rag-chatbot-confluence"/>
+        <param name="plugin-icon">images/pluginIcon.png</param>
+        <param name="plugin-logo">images/pluginLogo.png</param>
+    </plugin-info>
+
+    <!-- Localization -->
+    <resource type="i18n" name="i18n" location="confluence-rag-chatbot"/>
+
+    <!-- Component Imports -->
+    <component-import key="sal-api" interface="com.atlassian.sal.api.ApplicationProperties"/>
+    <component-import key="template-renderer" interface="com.atlassian.templaterenderer.velocity.one.six.VelocityTemplateRenderer"/>
+    <component-import key="plugin-settings-factory" interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
+    <component-import key="user-manager" interface="com.atlassian.sal.api.user.UserManager"/>
+
+    <!-- Web Resources -->
+    <web-resource key="confluence-rag-chatbot-resources" name="RAG Chatbot Resources">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.auiplugin:aui-experimental-restfultable</dependency>
+        
+        <resource type="download" name="confluence-rag-chatbot.css" location="/css/confluence-rag-chatbot.css"/>
+        <resource type="download" name="confluence-rag-chatbot.js" location="/js/confluence-rag-chatbot.js"/>
+        <resource type="download" name="chat-widget.js" location="/js/chat-widget.js"/>
+        
+        <context>confluence-rag-chatbot</context>
+    </web-resource>
+
+    <!-- Admin Configuration Servlet -->
+    <servlet name="RAG Chatbot Admin" key="rag-admin-servlet" class="com.confluence.rag.servlet.AdminServlet">
+        <description>Administration interface for RAG Chatbot configuration</description>
+        <url-pattern>/plugins/servlet/rag-admin</url-pattern>
+    </servlet>
+
+    <!-- REST API Resources -->
+    <rest name="RAG Chatbot REST API" key="rag-rest-api" path="/rag" version="1.0">
+        <description>REST API for RAG Chatbot operations</description>
+    </rest>
+
+    <!-- Web Panel for Chat Widget -->
+    <web-panel key="rag-chat-panel" name="RAG Chat Panel" class="com.confluence.rag.panel.ChatPanel" location="atl.general">
+        <description>Chat widget panel for RAG chatbot</description>
+        <label key="rag.chat.panel.label"/>
+        <resource name="view" type="velocity" location="/templates/chat-panel.vm"/>
+    </web-panel>
+
+    <!-- Macro for Embedding Chat -->
+    <xhtml-macro name="rag-chat" class="com.confluence.rag.macro.RagChatMacro" key="rag-chat-macro">
+        <description key="rag.chat.macro.desc"/>
+        <category name="communication"/>
+        <parameters>
+            <parameter name="title" type="string" default="AI Assistant">
+                <description key="rag.chat.macro.title.desc"/>
+            </parameter>
+            <parameter name="height" type="string" default="400px">
+                <description key="rag.chat.macro.height.desc"/>
+            </parameter>
+        </parameters>
+    </xhtml-macro>
+
+    <!-- Admin Links -->
+    <web-item key="rag-admin-link" name="RAG Chatbot" section="system.admin/configuration" weight="100">
+        <description key="rag.admin.link.desc"/>
+        <label key="rag.admin.link.label"/>
+        <link linkId="rag-admin-link">/plugins/servlet/rag-admin</link>
+    </web-item>
+
+    <!-- Component Definition -->
+    <component key="rag-service" class="com.confluence.rag.service.RagService">
+        <description>Core RAG service for document processing and chat</description>
+        <interface>com.confluence.rag.api.RagServiceInterface</interface>
+    </component>
+
+    <component key="aws-service" class="com.confluence.rag.service.AwsService">
+        <description>AWS integration service</description>
+        <interface>com.confluence.rag.api.AwsServiceInterface</interface>
+    </component>
+
+    <component key="confluence-sync-service" class="com.confluence.rag.service.ConfluenceSyncService">
+        <description>Service for syncing Confluence content</description>
+        <interface>com.confluence.rag.api.ConfluenceSyncServiceInterface</interface>
+    </component>
+
+    <!-- Scheduler Jobs -->
+    <component key="content-sync-job" class="com.confluence.rag.job.ContentSyncJob">
+        <description>Scheduled job for syncing content from external sources</description>
+    </component>
+</atlassian-plugin>
