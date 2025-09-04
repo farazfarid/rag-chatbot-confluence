@@ -31,18 +31,18 @@
 
     <!-- Admin Configuration Servlet -->
     <servlet name="RAG Chatbot Admin" key="rag-admin-servlet" class="com.confluence.rag.servlet.AdminServlet">
-        <description>Administration interface for RAG Chatbot configuration</description>
+        <description>Administrationsoberfläche für RAG Chatbot-Konfiguration</description>
         <url-pattern>/plugins/servlet/rag-admin</url-pattern>
     </servlet>
 
     <!-- REST API Resources -->
     <rest name="RAG Chatbot REST API" key="rag-rest-api" path="/rag" version="1.0">
-        <description>REST API for RAG Chatbot operations</description>
+        <description>REST API für RAG Chatbot-Operationen</description>
     </rest>
 
     <!-- Web Panel for Chat Widget -->
     <web-panel key="rag-chat-panel" name="RAG Chat Panel" class="com.confluence.rag.panel.ChatPanel" location="atl.general">
-        <description>Chat widget panel for RAG chatbot</description>
+        <description>Chat-Widget-Panel für RAG Chatbot</description>
         <label key="rag.chat.panel.label"/>
         <resource name="view" type="velocity" location="/templates/chat-panel.vm"/>
     </web-panel>
@@ -70,22 +70,22 @@
 
     <!-- Component Definition -->
     <component key="rag-service" class="com.confluence.rag.service.RagService">
-        <description>Core RAG service for document processing and chat</description>
+        <description>Kern-RAG-Service für Dokumentenverarbeitung und Chat</description>
         <interface>com.confluence.rag.api.RagServiceInterface</interface>
     </component>
 
     <component key="aws-service" class="com.confluence.rag.service.AwsService">
-        <description>AWS integration service</description>
+        <description>AWS-Integrations-Service</description>
         <interface>com.confluence.rag.api.AwsServiceInterface</interface>
     </component>
 
     <component key="confluence-sync-service" class="com.confluence.rag.service.ConfluenceSyncService">
-        <description>Service for syncing Confluence content</description>
+        <description>Service für die Synchronisation von Confluence-Inhalten</description>
         <interface>com.confluence.rag.api.ConfluenceSyncServiceInterface</interface>
     </component>
 
     <!-- Scheduler Jobs -->
     <component key="content-sync-job" class="com.confluence.rag.job.ContentSyncJob">
-        <description>Scheduled job for syncing content from external sources</description>
+        <description>Geplanter Job für die Synchronisation von Inhalten aus externen Quellen</description>
     </component>
 </atlassian-plugin>

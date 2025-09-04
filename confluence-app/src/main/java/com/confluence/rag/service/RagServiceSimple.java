@@ -46,7 +46,7 @@ public class RagServiceSimple implements RagServiceInterface {
     @Override
     public ChatResponse processChat(ChatRequest request) {
         if (request == null || request.getMessage() == null || request.getMessage().trim().isEmpty()) {
-            return ChatResponse.error("Please provide a valid question.", request != null ? request.getSessionId() : "unknown");
+            return ChatResponse.error("Bitte geben Sie eine gültige Frage ein.", request != null ? request.getSessionId() : "unknown");
         }
         
         logger.info("Processing chat request: {}", request.getMessage());
@@ -62,7 +62,7 @@ public class RagServiceSimple implements RagServiceInterface {
             
         } catch (Exception e) {
             logger.error("Error processing chat request", e);
-            return ChatResponse.error("I apologize, but I encountered an error while processing your question. Please try again or contact your administrator.", request.getSessionId());
+            return ChatResponse.error("Entschuldigung, aber ich bin auf einen Fehler gestoßen, während ich Ihre Frage bearbeitet habe. Bitte versuchen Sie es erneut oder wenden Sie sich an Ihren Administrator.", request.getSessionId());
         }
     }
     
@@ -70,7 +70,7 @@ public class RagServiceSimple implements RagServiceInterface {
     public DocumentProcessingResponse processDocument(DocumentProcessingRequest request) {
         if (request == null || request.getContent() == null) {
             logger.warn("Invalid document processing request");
-            return new DocumentProcessingResponse(false, "unknown", "Invalid document request");
+            return new DocumentProcessingResponse(false, "unknown", "Ungültige Dokumentenanfrage");
         }
         
         logger.info("Processing document: {}", request.getDocumentId());
@@ -87,12 +87,12 @@ public class RagServiceSimple implements RagServiceInterface {
             }
             
             logger.info("Successfully processed document: {}", request.getDocumentId());
-            return new DocumentProcessingResponse(true, request.getDocumentId(), "Document processed successfully");
+            return new DocumentProcessingResponse(true, request.getDocumentId(), "Dokument erfolgreich verarbeitet");
             
         } catch (Exception e) {
             String docId = (request != null && request.getDocumentId() != null) ? request.getDocumentId() : "unknown";
             logger.error("Error processing document: " + docId, e);
-            return new DocumentProcessingResponse(false, docId, "Error processing document: " + e.getMessage());
+            return new DocumentProcessingResponse(false, docId, "Fehler beim Verarbeiten des Dokuments: " + e.getMessage());
         }
     }
     
@@ -102,18 +102,19 @@ public class RagServiceSimple implements RagServiceInterface {
         
         try {
             // Mock relevant documents based on query keywords
-            if (query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud")) {
-                documents.add("AWS best practices and guidelines for cloud deployment...");
-                documents.add("Cloud security considerations and recommendations...");
+            if (query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud") || 
+                query.toLowerCase().contains("wolke") || query.toLowerCase().contains("dienst")) {
+                documents.add("AWS Best Practices und Richtlinien für Cloud-Bereitstellung...");
+                documents.add("Cloud-Sicherheitsüberlegungen und Empfehlungen...");
             }
             
             if (query.toLowerCase().contains("confluence") || query.toLowerCase().contains("wiki")) {
-                documents.add("Confluence user guide and administration tips...");
-                documents.add("Wiki content management and collaboration features...");
+                documents.add("Confluence Benutzerhandbuch und Verwaltungstipps...");
+                documents.add("Wiki-Inhaltsverwaltung und Zusammenarbeitsfunktionen...");
             }
             
             if (documents.isEmpty()) {
-                documents.add("General information and helpful resources...");
+                documents.add("Allgemeine Informationen und hilfreiche Ressourcen...");
             }
             
             // Limit results
@@ -123,7 +124,7 @@ public class RagServiceSimple implements RagServiceInterface {
             
         } catch (Exception e) {
             logger.error("Error searching documents", e);
-            documents.add("Error occurred while searching documents");
+            documents.add("Fehler beim Durchsuchen der Dokumente");
         }
         
         return documents;
@@ -165,11 +166,11 @@ public class RagServiceSimple implements RagServiceInterface {
         }
         
         if (!s3Bucket.isEmpty()) {
-            sources.add("S3 Documents: " + s3Bucket);
+            sources.add("S3 Dokumente: " + s3Bucket);
         }
         
         if (sources.isEmpty()) {
-            sources.add("No knowledge sources configured");
+            sources.add("Keine Wissensquellen konfiguriert");
         }
         
         return sources;
@@ -203,7 +204,7 @@ public class RagServiceSimple implements RagServiceInterface {
     private String buildContext(List<String> documents) {
         StringBuilder context = new StringBuilder();
         for (int i = 0; i < documents.size() && i < 3; i++) {
-            context.append("Document ").append(i + 1).append(": ");
+            context.append("Dokument ").append(i + 1).append(": ");
             context.append(documents.get(i));
             context.append("\n\n");
         }
@@ -214,21 +215,23 @@ public class RagServiceSimple implements RagServiceInterface {
         // Simulate AI response generation
         StringBuilder response = new StringBuilder();
         
-        response.append("Based on the available information, I can help you with your question about: ");
+        response.append("Basierend auf den verfügbaren Informationen kann ich Ihnen bei Ihrer Frage helfen zu: ");
         response.append(query);
         response.append("\n\n");
         
-        if (context.contains("AWS") || context.contains("cloud")) {
-            response.append("For AWS and cloud-related topics, I recommend following best practices ");
-            response.append("for security, scalability, and cost optimization. ");
+        if (context.contains("AWS") || context.contains("cloud") || context.contains("Cloud") || 
+            query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud")) {
+            response.append("Für AWS- und Cloud-bezogene Themen empfehle ich, bewährte Praktiken ");
+            response.append("für Sicherheit, Skalierbarkeit und Kostenoptimierung zu befolgen. ");
         }
         
-        if (context.contains("Confluence") || context.contains("wiki")) {
-            response.append("For Confluence and wiki topics, you can find detailed documentation ");
-            response.append("in the administration guides and user manuals. ");
+        if (context.contains("Confluence") || context.contains("wiki") || 
+            query.toLowerCase().contains("confluence") || query.toLowerCase().contains("wiki")) {
+            response.append("Für Confluence- und Wiki-Themen finden Sie detaillierte Dokumentation ");
+            response.append("in den Verwaltungshandbüchern und Benutzerhandbüchern. ");
         }
         
-        response.append("\n\nWould you like me to provide more specific information about any particular aspect?");
+        response.append("\n\nMöchten Sie, dass ich spezifischere Informationen zu einem bestimmten Aspekt bereitstelle?");
         
         return response.toString();
     }

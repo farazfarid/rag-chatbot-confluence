@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>RAG Chatbot Configuration</title>
+    <title>RAG Chatbot Konfiguration</title>
     <meta name="decorator" content="atl.admin">
     <meta name="application-base-url" content="$applicationProperties.getBaseUrl()">
     $webResourceManager.requireResource("com.confluence.rag.confluence-rag-chatbot:confluence-rag-chatbot-resources")
@@ -13,8 +13,8 @@
                 <header class="aui-page-header">
                     <div class="aui-page-header-inner">
                         <div class="aui-page-header-main">
-                            <h1>RAG Chatbot Configuration</h1>
-                            <p class="aui-page-header-description">Configure AWS integration and knowledge base settings</p>
+                            <h1>RAG Chatbot Konfiguration</h1>
+                            <p class="aui-page-header-description">AWS-Integration und Wissensdatenbank-Einstellungen konfigurieren</p>
                         </div>
                     </div>
                 </header>
@@ -22,16 +22,16 @@
                 #if($request.getParameter("saved"))
                     <div class="aui-message aui-message-success">
                         <p class="title">
-                            <strong>Success!</strong>
+                            <strong>Erfolg!</strong>
                         </p>
-                        <p>Configuration has been saved successfully.</p>
+                        <p>Die Konfiguration wurde erfolgreich gespeichert.</p>
                     </div>
                 #end
 
                 #if($request.getParameter("error"))
                     <div class="aui-message aui-message-error">
                         <p class="title">
-                            <strong>Error!</strong>
+                            <strong>Fehler!</strong>
                         </p>
                         <p>$request.getParameter("error")</p>
                     </div>
@@ -42,11 +42,11 @@
                         <!-- Service Status -->
                         <div class="aui-group aui-group-split">
                             <div class="aui-item">
-                                <h2>Service Status</h2>
+                                <h2>Service-Status</h2>
                                 #if($serviceHealthy)
-                                    <div class="aui-lozenge aui-lozenge-success">Healthy</div>
+                                    <div class="aui-lozenge aui-lozenge-success">Gesund</div>
                                 #else
-                                    <div class="aui-lozenge aui-lozenge-error">Unhealthy</div>
+                                    <div class="aui-lozenge aui-lozenge-error">Fehlerhaft</div>
                                 #end
                             </div>
                         </div>
@@ -54,87 +54,87 @@
                         <!-- Configuration Form -->
                         <form class="aui" method="post" action="">
                             <div class="field-group">
-                                <label for="awsRegion">AWS Region<span class="aui-icon icon-required">(required)</span></label>
+                                <label for="awsRegion">AWS-Region<span class="aui-icon icon-required">(erforderlich)</span></label>
                                 <input class="text" type="text" id="awsRegion" name="awsRegion" value="$!awsRegion" placeholder="us-east-1">
-                                <div class="description">AWS region where your services are deployed</div>
+                                <div class="description">AWS-Region, in der Ihre Services bereitgestellt sind</div>
                             </div>
 
                             <div class="field-group">
-                                <label for="awsAccessKey">AWS Access Key ID<span class="aui-icon icon-required">(required)</span></label>
+                                <label for="awsAccessKey">AWS-Zugriffsschlüssel-ID<span class="aui-icon icon-required">(erforderlich)</span></label>
                                 <input class="text" type="text" id="awsAccessKey" name="awsAccessKey" value="$!awsAccessKey" placeholder="AKIAIOSFODNN7EXAMPLE">
-                                <div class="description">AWS access key for API access</div>
+                                <div class="description">AWS-Zugriffsschlüssel für API-Zugriff</div>
                             </div>
 
                             <div class="field-group">
-                                <label for="awsSecretKey">AWS Secret Access Key<span class="aui-icon icon-required">(required)</span></label>
-                                <input class="password" type="password" id="awsSecretKey" name="awsSecretKey" placeholder="Enter secret key">
-                                <div class="description">AWS secret access key (will be encrypted)</div>
+                                <label for="awsSecretKey">AWS Geheimer Zugriffsschlüssel<span class="aui-icon icon-required">(erforderlich)</span></label>
+                                <input class="password" type="password" id="awsSecretKey" name="awsSecretKey" placeholder="Geheimen Schlüssel eingeben">
+                                <div class="description">AWS geheimer Zugriffsschlüssel (wird verschlüsselt)</div>
                             </div>
 
                             <div class="field-group">
-                                <label for="bedrockModel">Bedrock Model</label>
+                                <label for="bedrockModel">Bedrock-Modell</label>
                                 <select class="select" id="bedrockModel" name="bedrockModel">
                                     <option value="anthropic.claude-3-sonnet-20240229-v1:0" #if($bedrockModel == "anthropic.claude-3-sonnet-20240229-v1:0")selected#end>Claude 3 Sonnet</option>
                                     <option value="anthropic.claude-3-haiku-20240307-v1:0" #if($bedrockModel == "anthropic.claude-3-haiku-20240307-v1:0")selected#end>Claude 3 Haiku</option>
                                     <option value="amazon.titan-text-express-v1" #if($bedrockModel == "amazon.titan-text-express-v1")selected#end>Titan Text Express</option>
                                 </select>
-                                <div class="description">AI model to use for generating responses</div>
+                                <div class="description">KI-Modell zur Antwortgenerierung</div>
                             </div>
 
                             <div class="field-group">
-                                <label for="opensearchEndpoint">OpenSearch Endpoint</label>
+                                <label for="opensearchEndpoint">OpenSearch-Endpunkt</label>
                                 <input class="text long-field" type="url" id="opensearchEndpoint" name="opensearchEndpoint" value="$!opensearchEndpoint" placeholder="https://your-domain.region.es.amazonaws.com">
-                                <div class="description">OpenSearch Serverless endpoint for vector storage</div>
+                                <div class="description">OpenSearch Serverless-Endpunkt für Vektorspeicherung</div>
                             </div>
 
                             <div class="field-group">
-                                <label for="s3Bucket">S3 Bucket</label>
+                                <label for="s3Bucket">S3-Bucket</label>
                                 <input class="text" type="text" id="s3Bucket" name="s3Bucket" value="$!s3Bucket" placeholder="confluence-rag-documents">
-                                <div class="description">S3 bucket for document storage</div>
+                                <div class="description">S3-Bucket für Dokumentenspeicherung</div>
                             </div>
 
                             <div class="field-group">
                                 <label for="apiGatewayUrl">API Gateway URL</label>
                                 <input class="text long-field" type="url" id="apiGatewayUrl" name="apiGatewayUrl" value="$!apiGatewayUrl" placeholder="https://api-id.execute-api.region.amazonaws.com/prod">
-                                <div class="description">API Gateway endpoint for Lambda functions</div>
+                                <div class="description">API Gateway-Endpunkt für Lambda-Funktionen</div>
                             </div>
 
                             <div class="buttons-container">
                                 <div class="buttons">
-                                    <input class="button submit" type="submit" value="Save Configuration" id="save-button">
-                                    <a class="cancel" href="">Cancel</a>
+                                    <input class="button submit" type="submit" value="Konfiguration speichern" id="save-button">
+                                    <a class="cancel" href="">Abbrechen</a>
                                 </div>
                             </div>
                         </form>
 
                         <!-- Knowledge Base Management -->
-                        <h2>Knowledge Base Sources</h2>
+                        <h2>Wissensdatenbank-Quellen</h2>
                         <div class="aui-tabs horizontal-tabs" id="knowledge-sources-tabs">
                             <ul class="tabs-menu">
                                 <li class="menu-item active-tab">
-                                    <a href="#confluence-sites">Confluence Sites</a>
+                                    <a href="#confluence-sites">Confluence-Websites</a>
                                 </li>
                                 <li class="menu-item">
-                                    <a href="#pdf-documents">PDF Documents</a>
+                                    <a href="#pdf-documents">PDF-Dokumente</a>
                                 </li>
                                 <li class="menu-item">
-                                    <a href="#external-websites">External Websites</a>
+                                    <a href="#external-websites">Externe Websites</a>
                                 </li>
                             </ul>
                             
                             <div class="tabs-pane active-pane" id="confluence-sites">
-                                <p>Configure additional Confluence instances to sync content from.</p>
-                                <button class="aui-button aui-button-primary" id="add-confluence-source">Add Confluence Site</button>
+                                <p>Konfigurieren Sie zusätzliche Confluence-Instanzen, um Inhalte zu synchronisieren.</p>
+                                <button class="aui-button aui-button-primary" id="add-confluence-source">Confluence-Website hinzufügen</button>
                             </div>
                             
                             <div class="tabs-pane" id="pdf-documents">
-                                <p>Upload PDF documents to be included in the knowledge base.</p>
-                                <button class="aui-button aui-button-primary" id="upload-pdf">Upload PDF</button>
+                                <p>Laden Sie PDF-Dokumente hoch, die in die Wissensdatenbank aufgenommen werden sollen.</p>
+                                <button class="aui-button aui-button-primary" id="upload-pdf">PDF hochladen</button>
                             </div>
                             
                             <div class="tabs-pane" id="external-websites">
-                                <p>Add external websites to crawl and index.</p>
-                                <button class="aui-button aui-button-primary" id="add-website">Add Website</button>
+                                <p>Fügen Sie externe Websites hinzu, die durchsucht und indexiert werden sollen.</p>
+                                <button class="aui-button aui-button-primary" id="add-website">Website hinzufügen</button>
                             </div>
                         </div>
                     </div>

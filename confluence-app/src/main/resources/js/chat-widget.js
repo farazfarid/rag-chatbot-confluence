@@ -146,7 +146,7 @@
 
     handleChatResponse: function (response) {
       if (response.error) {
-        this.addMessage('Sorry, I encountered an error: ' + response.error, 'bot');
+        this.addMessage('Entschuldigung, ich bin auf einen Fehler gestoßen: ' + response.error, 'bot');
       } else if (response.response) {
         this.addMessage(response.response, 'bot');
 
@@ -155,17 +155,17 @@
           this.addSourcesMessage(response.sources);
         }
       } else {
-        this.addMessage('Sorry, I didn\'t receive a response. Please try again.', 'bot');
+        this.addMessage('Entschuldigung, ich habe keine Antwort erhalten. Bitte versuchen Sie es erneut.', 'bot');
       }
     },
 
     handleChatError: function (xhr, status, error) {
-      var errorMessage = 'Sorry, I\'m having trouble connecting. Please try again later.';
+      var errorMessage = 'Entschuldigung, ich habe Probleme beim Verbinden. Bitte versuchen Sie es später erneut.';
 
       if (xhr.status === 400) {
-        errorMessage = 'Please check your message and try again.';
+        errorMessage = 'Bitte überprüfen Sie Ihre Nachricht und versuchen Sie es erneut.';
       } else if (xhr.status === 503) {
-        errorMessage = 'The AI service is temporarily unavailable. Please try again later.';
+        errorMessage = 'Der KI-Service ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.';
       }
 
       this.addMessage(errorMessage, 'bot');
@@ -175,7 +175,7 @@
       var messagesContainer = $('#rag-chat-messages');
       var sourcesHtml = '<div class="rag-chat-message rag-chat-bot-message rag-sources-message">' +
         '<div class="rag-chat-message-content">' +
-        '<p><strong>Sources:</strong></p>' +
+        '<p><strong>Quellen:</strong></p>' +
         '<ul>';
 
       sources.forEach(function (source, index) {
