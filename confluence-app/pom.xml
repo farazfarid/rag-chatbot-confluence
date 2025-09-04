@@ -121,6 +121,9 @@
                 <version>3.2.0</version>
                 <configuration>
                     <archive>
+                        <manifest>
+                            <mainClass>com.confluence.rag.SecurityTestApp</mainClass>
+                        </manifest>
                         <manifestEntries>
                             <Atlassian-Plugin-Key>com.confluence.rag.confluence-rag-chatbot</Atlassian-Plugin-Key>
                             <Atlassian-Plugin-Name>Confluence RAG Chatbot</Atlassian-Plugin-Name>

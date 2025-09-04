@@ -327,6 +327,8 @@
       <div class="tabs">
         <div class="tab active" onclick="showTab('aws')">AWS Konfiguration</div>
         <div class="tab" onclick="showTab('sources')">Wissensquellen</div>
+        <div class="tab" onclick="showTab('logging')">S3 Logging</div>
+        <div class="tab" onclick="showTab('security')">Sicherheit</div>
         <div class="tab" onclick="showTab('settings')">Einstellungen</div>
         <div class="tab" onclick="showTab('status')">Status</div>
       </div>
@@ -390,6 +392,144 @@
             <input type="file" multiple accept=".pdf">
           </div>
           <button class="btn">Dokumente Hochladen</button>
+        </div>
+      </div>
+
+      <div id="logging-tab" class="tab-content">
+        <div class="admin-section">
+          <h3>📊 S3 Logging Konfiguration</h3>
+          <p style="color: #666; margin-bottom: 20px;">
+            Alle Benutzeranfragen und Sicherheitsereignisse werden sicher in AWS S3 protokolliert.
+            Dies ermöglicht Analyse, Compliance und Überwachung des Chatbot-Verhaltens.
+          </p>
+
+          <div class="form-group">
+            <label>S3 Log Bucket Name <span style="color: red;">*</span></label>
+            <input type="text" id="logBucketName" placeholder="confluence-rag-logs" value="confluence-rag-logs">
+            <small style="color: #666;">Separater S3-Bucket für Log-Dateien (wird automatisch erstellt, falls nicht
+              vorhanden)</small>
+          </div>
+
+          <div class="form-group">
+            <label>Log Bucket Region <span style="color: red;">*</span></label>
+            <select id="logBucketRegion">
+              <option value="eu-central-1" selected>Europe (Frankfurt) - eu-central-1</option>
+              <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+              <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+              <option value="us-west-2">US West (Oregon) - us-west-2</option>
+              <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="enableS3Logging" checked> S3-Logging aktivieren
+            </label>
+            <small style="color: #666;">Schaltet die gesamte S3-Protokollierung ein/aus</small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="logUserQueries" checked> Benutzeranfragen protokollieren
+            </label>
+            <small style="color: #666;">Speichert alle Benutzerfragen mit Antworten für Analyse und Verbesserung</small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="logSecurityEvents" checked> Sicherheitsereignisse protokollieren
+            </label>
+            <small style="color: #666;">Protokolliert Jailbreak-Versuche, Rate-Limit-Verletzungen und andere
+              Sicherheitsvorfälle</small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="logSystemEvents" checked> Systemereignisse protokollieren
+            </label>
+            <small style="color: #666;">Dokumentiert Konfigurationsänderungen und Systemzustände</small>
+          </div>
+
+          <div
+            style="margin: 20px 0; padding: 15px; background: #e3fcef; border-left: 4px solid #36b37e; border-radius: 3px;">
+            <h4 style="margin: 0 0 10px 0; color: #006644;">📁 Log-Datei-Struktur</h4>
+            <code style="background: #fff; padding: 5px; display: block; font-family: monospace;">
+              confluence-rag-logs/<br>
+              ├── 2024-09-04/<br>
+              │   ├── 09/ (Stunde)<br>
+              │   │   ├── user-queries-09:15:30.json<br>
+              │   │   ├── security-events-09:22:15.json<br>
+              │   │   └── system-events-09:30:45.json<br>
+              │   └── 10/<br>
+              └── 2024-09-05/
+            </code>
+          </div>
+
+          <div
+            style="margin: 20px 0; padding: 15px; background: #deebff; border-left: 4px solid #0052cc; border-radius: 3px;">
+            <h4 style="margin: 0 0 10px 0; color: #0052cc;">🔒 Datenschutz & Sicherheit</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li>Sensible Daten (Passwörter, E-Mails) werden automatisch anonymisiert</li>
+              <li>Logs werden mit AWS-Standard-Verschlüsselung gespeichert</li>
+              <li>Zugriff über IAM-Rollen und -Richtlinien kontrolliert</li>
+              <li>Automatische Archivierung nach 90 Tagen (konfigurierbar)</li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <button class="btn" onclick="saveS3LoggingConfig()">💾 S3 Logging Konfiguration Speichern</button>
+            <button class="btn btn-secondary" onclick="testS3LoggingConnection()">🔗 S3-Verbindung Testen</button>
+            <button class="btn btn-secondary" onclick="showS3LoggingStats()">📊 Logging-Statistiken</button>
+          </div>
+
+          <div id="s3LoggingStatus" style="margin-top: 20px;"></div>
+        </div>
+      </div>
+
+      <div id="security-tab" class="tab-content">
+        <div class="admin-section">
+          <h3>🔒 Sicherheitseinstellungen</h3>
+          <div class="form-group">
+            <label>Maximale Anfragelänge (Zeichen)</label>
+            <input type="number" value="500" min="100" max="1000">
+            <small style="color: #666;">Begrenzt die Länge von Benutzeranfragen zur Verhinderung von Angriffen</small>
+          </div>
+          <div class="form-group">
+            <label>Mindest-Relevanz-Score</label>
+            <input type="number" value="0.3" min="0.1" max="1.0" step="0.1">
+            <small style="color: #666;">Mindestpunktzahl für Themenbezug zur Wissensdatenbank (0.1 = niedrig, 1.0 =
+              hoch)</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" checked> Strenger Sicherheitsmodus (empfohlen)
+            </label>
+            <small style="color: #666;">Aktiviert erweiterte Jailbreak-Erkennung und Inhaltsfilterung</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" checked> Nur Wissensdatenbank-Themen erlauben
+            </label>
+            <small style="color: #666;">Blockiert alle Anfragen, die nicht mit konfigurierten Wissensquellen
+              zusammenhängen</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" checked> Prompt-Injection-Schutz
+            </label>
+            <small style="color: #666;">Erkennt und blockiert Versuche, das System zu manipulieren</small>
+          </div>
+          <button class="btn">Sicherheitseinstellungen Speichern</button>
+        </div>
+
+        <div class="admin-section">
+          <h3>🛡️ Erkannte Bedrohungen (Letzten 24h)</h3>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
+            <p><strong>Jailbreak-Versuche:</strong> <span style="color: #de350b;">3 blockiert</span></p>
+            <p><strong>Off-Topic-Anfragen:</strong> <span style="color: #ff8b00;">12 gefiltert</span></p>
+            <p><strong>Verdächtige Eingaben:</strong> <span style="color: #0052cc;">7 überprüft</span></p>
+          </div>
+          <button class="btn btn-secondary">Sicherheitsprotokoll anzeigen</button>
         </div>
       </div>
 
@@ -459,6 +599,34 @@
 
       if (!input.value.trim()) return;
 
+      // CLIENT-SIDE SECURITY DEMO
+      const message = input.value.trim();
+
+      // Check for jailbreak patterns (demo)
+      const jailbreakPatterns = [
+        /(?:du bist|you are|act as|pretend|rolle|spielen)/i,
+        /(?:ignore|vergiss|instruction|anweisung)/i,
+        /(?:tell me about yourself|erzähl mir von dir)/i,
+        /(?:system|admin|execute|ausführen)/i
+      ];
+
+      for (let pattern of jailbreakPatterns) {
+        if (pattern.test(message)) {
+          const errorMessage = document.createElement('div');
+          errorMessage.className = 'rag-message';
+          errorMessage.innerHTML = `
+            <div class="rag-message-avatar">🔒</div>
+            <div class="rag-message-content" style="background: #ffebe5; color: #974100;">
+              <strong>Sicherheitswarnung:</strong> Ihre Nachricht enthält nicht erlaubte Inhalte. Bitte stellen Sie nur Fragen zu Ihrer Wissensdatenbank.
+            </div>
+          `;
+          messages.appendChild(errorMessage);
+          input.value = '';
+          messages.scrollTop = messages.scrollHeight;
+          return;
+        }
+      }
+
       // Add user message
       const userMessage = document.createElement('div');
       userMessage.className = 'rag-message user';
@@ -474,7 +642,7 @@
         botMessage.className = 'rag-message';
         botMessage.innerHTML = `
                     <div class="rag-message-avatar">KI</div>
-                    <div class="rag-message-content">Das ist eine UI-Vorschau. Im tatsächlichen Plugin würde ich Ihre Wissensdatenbank durchsuchen und eine hilfreiche Antwort basierend auf den konfigurierten Quellen bereitstellen.</div>
+                    <div class="rag-message-content">Das ist eine UI-Vorschau mit Sicherheitsdemo. Im tatsächlichen Plugin würde ich Ihre Wissensdatenbank durchsuchen und eine sichere, relevante Antwort basierend auf den konfigurierten Quellen bereitstellen. Alle Eingaben werden auf Jailbreak-Versuche und Themenbezug überprüft.</div>
                 `;
         messages.appendChild(botMessage);
         messages.scrollTop = messages.scrollHeight;
@@ -490,6 +658,123 @@
         sendMessage();
       }
     });
+
+    // S3 Logging Configuration Functions
+    function saveS3LoggingConfig() {
+      const bucketName = document.getElementById('logBucketName').value;
+      const region = document.getElementById('logBucketRegion').value;
+      const enableLogging = document.getElementById('enableS3Logging').checked;
+      const logUserQueries = document.getElementById('logUserQueries').checked;
+      const logSecurityEvents = document.getElementById('logSecurityEvents').checked;
+      const logSystemEvents = document.getElementById('logSystemEvents').checked;
+
+      if (!bucketName.trim()) {
+        showS3Status('Fehler: Bitte geben Sie einen S3-Bucket-Namen ein.', 'error');
+        return;
+      }
+
+      // Simulate saving configuration
+      const config = {
+        bucketName: bucketName,
+        region: region,
+        enableLogging: enableLogging,
+        logUserQueries: logUserQueries,
+        logSecurityEvents: logSecurityEvents,
+        logSystemEvents: logSystemEvents
+      };
+
+      showS3Status('✅ S3-Logging-Konfiguration erfolgreich gespeichert!<br>' +
+        `Bucket: ${bucketName}<br>` +
+        `Region: ${region}<br>` +
+        `Logging aktiv: ${enableLogging ? 'Ja' : 'Nein'}`, 'success');
+
+      // Simulate logging the configuration change
+      console.log('S3 Logging konfiguriert:', config);
+    }
+
+    function testS3LoggingConnection() {
+      const bucketName = document.getElementById('logBucketName').value;
+      const region = document.getElementById('logBucketRegion').value;
+
+      if (!bucketName.trim()) {
+        showS3Status('Fehler: Bitte geben Sie einen S3-Bucket-Namen ein.', 'error');
+        return;
+      }
+
+      showS3Status('🔄 Teste S3-Verbindung...', 'info');
+
+      // Simulate connection test
+      setTimeout(() => {
+        const success = Math.random() > 0.2; // 80% success rate for demo
+
+        if (success) {
+          showS3Status(`✅ S3-Verbindung erfolgreich!<br>` +
+            `Bucket "${bucketName}" in Region "${region}" ist erreichbar.<br>` +
+            `Test-Log-Datei wurde erfolgreich erstellt.`, 'success');
+        } else {
+          showS3Status(`❌ S3-Verbindungsfehler:<br>` +
+            `Bucket "${bucketName}" konnte nicht erreicht werden.<br>` +
+            `Bitte überprüfen Sie die AWS-Anmeldedaten und Bucket-Berechtigungen.`, 'error');
+        }
+      }, 2000);
+    }
+
+    function showS3LoggingStats() {
+      showS3Status('📊 S3-Logging-Statistiken werden geladen...', 'info');
+
+      // Simulate fetching stats
+      setTimeout(() => {
+        const stats = {
+          totalLogs: Math.floor(Math.random() * 10000) + 1000,
+          userQueries: Math.floor(Math.random() * 5000) + 500,
+          securityEvents: Math.floor(Math.random() * 50) + 5,
+          systemEvents: Math.floor(Math.random() * 200) + 20,
+          lastUpload: new Date().toLocaleString('de-DE'),
+          bucketSize: (Math.random() * 100 + 10).toFixed(2) + ' MB'
+        };
+
+        showS3Status(`📊 <strong>S3-Logging-Statistiken</strong><br>` +
+          `Gesamt-Log-Einträge: <strong>${stats.totalLogs.toLocaleString()}</strong><br>` +
+          `Benutzeranfragen: <strong>${stats.userQueries.toLocaleString()}</strong><br>` +
+          `Sicherheitsereignisse: <strong>${stats.securityEvents}</strong><br>` +
+          `Systemereignisse: <strong>${stats.systemEvents}</strong><br>` +
+          `Letzter Upload: <strong>${stats.lastUpload}</strong><br>` +
+          `Bucket-Größe: <strong>${stats.bucketSize}</strong>`, 'info');
+      }, 1500);
+    }
+
+    function showS3Status(message, type) {
+      const statusDiv = document.getElementById('s3LoggingStatus');
+      const typeColors = {
+        success: '#e3fcef',
+        error: '#ffebe5',
+        info: '#deebff'
+      };
+      const typeBorders = {
+        success: '#36b37e',
+        error: '#de350b',
+        info: '#0052cc'
+      };
+
+      statusDiv.innerHTML = `
+        <div style="
+          padding: 15px; 
+          background: ${typeColors[type]}; 
+          border-left: 4px solid ${typeBorders[type]}; 
+          border-radius: 3px;
+          margin-top: 15px;
+        ">
+          ${message}
+        </div>
+      `;
+
+      // Auto-clear success messages after 5 seconds
+      if (type === 'success') {
+        setTimeout(() => {
+          statusDiv.innerHTML = '';
+        }, 5000);
+      }
+    }
   </script>
 </body>
 

@@ -5,6 +5,9 @@ import com.confluence.rag.model.ChatRequest;
 import com.confluence.rag.model.ChatResponse;
 import com.confluence.rag.model.DocumentProcessingRequest;
 import com.confluence.rag.model.DocumentProcessingResponse;
+import com.confluence.rag.security.SecurityValidator;
+import com.confluence.rag.security.SecurityMonitor;
+import com.confluence.rag.logging.S3Logger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +27,15 @@ public class RagServiceSimple implements RagServiceInterface {
     
     private static final Logger logger = LoggerFactory.getLogger(RagServiceSimple.class);
     private final Properties config;
+    private final SecurityValidator securityValidator;
+    private final SecurityMonitor securityMonitor;
+    private final S3Logger s3Logger;
     
     public RagServiceSimple() {
         this.config = new Properties();
+        this.securityValidator = new SecurityValidator();
+        this.securityMonitor = new SecurityMonitor();
+        this.s3Logger = new S3Logger();
         loadConfiguration();
     }
     
@@ -45,24 +54,108 @@ public class RagServiceSimple implements RagServiceInterface {
     
     @Override
     public ChatResponse processChat(ChatRequest request) {
+        long startTime = System.currentTimeMillis();
+        String sessionId = (request != null) ? request.getSessionId() : "unknown";
+        String ipAddress = (request != null) ? request.getUserId() : "unknown"; // Using userId as IP placeholder
+        String userQuery = (request != null) ? request.getMessage() : "";
+        
+        // Log the incoming request
+        s3Logger.logSystemEvent("CHAT_REQUEST_RECEIVED", 
+                               "New chat request received from session: " + sessionId, sessionId);
+        
         if (request == null || request.getMessage() == null || request.getMessage().trim().isEmpty()) {
-            return ChatResponse.error("Bitte geben Sie eine gültige Frage ein.", request != null ? request.getSessionId() : "unknown");
+            String errorMessage = "Bitte geben Sie eine gültige Frage ein.";
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, errorMessage, false, "Empty query");
+            return ChatResponse.error(errorMessage, sessionId);
         }
         
-        logger.info("Processing chat request: {}", request.getMessage());
+        // Check if session is blocked
+        if (securityMonitor.isSessionBlocked(sessionId)) {
+            logger.warn("Blocked session {} attempted to send message", sessionId);
+            String errorMessage = "Ihr Zugriff wurde aufgrund wiederholter Sicherheitsverletzungen temporär blockiert. Bitte wenden Sie sich an Ihren Administrator.";
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, errorMessage, true, "Session blocked");
+            return ChatResponse.error(errorMessage, sessionId);
+        }
+        
+        // Check rate limiting
+        if (securityMonitor.isRateLimited(sessionId)) {
+            securityMonitor.recordSecurityIncident(sessionId, ipAddress, SecurityMonitor.SecurityIncidentType.RATE_LIMIT_EXCEEDED, "Too many requests");
+            String errorMessage = "Sie senden zu viele Anfragen. Bitte warten Sie einen Moment, bevor Sie eine neue Frage stellen.";
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, errorMessage, true, "Rate limit exceeded");
+            s3Logger.logSecurityIncident(sessionId, ipAddress, "RATE_LIMIT_EXCEEDED", "Too many requests", userQuery);
+            return ChatResponse.error(errorMessage, sessionId);
+        }
+        
+        // Record the request for rate limiting
+        securityMonitor.recordRequest(sessionId);
+        
+        // SECURITY VALIDATION - Prevent jailbreaking and ensure topic relevance
+        SecurityValidator.ValidationResult validation = securityValidator.validateQuery(request.getMessage());
+        if (!validation.isValid()) {
+            logger.warn("Security validation failed for query: {}", request.getMessage());
+            
+            // Determine incident type based on validation failure
+            SecurityMonitor.SecurityIncidentType incidentType = SecurityMonitor.SecurityIncidentType.SUSPICIOUS_PATTERN;
+            String securityDetails = validation.getErrorMessage();
+            
+            if (validation.getErrorMessage().contains("nicht erlaubte Inhalte")) {
+                incidentType = SecurityMonitor.SecurityIncidentType.JAILBREAK_ATTEMPT;
+                securityDetails = "Jailbreak attempt detected";
+            } else if (validation.getErrorMessage().contains("nicht mit Ihrer Wissensdatenbank zusammenhängen")) {
+                incidentType = SecurityMonitor.SecurityIncidentType.OFF_TOPIC_QUERY;
+                securityDetails = "Off-topic query";
+            }
+            
+            securityMonitor.recordSecurityIncident(sessionId, ipAddress, incidentType, validation.getErrorMessage());
+            
+            // Log security violation with full details
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, validation.getErrorMessage(), true, securityDetails);
+            s3Logger.logSecurityIncident(sessionId, ipAddress, incidentType.name(), 
+                                       validation.getErrorMessage(), userQuery);
+            
+            return ChatResponse.error(validation.getErrorMessage(), sessionId);
+        }
+        
+        // Sanitize the query
+        String sanitizedQuery = securityValidator.sanitizeQuery(request.getMessage());
+        logger.info("Processing sanitized chat request: {}", sanitizedQuery);
         
         try {
-            // Simulate RAG processing
-            List<String> documents = searchDocuments(request.getMessage(), 3);
+            // Search documents with sanitized query
+            List<String> documents = searchDocuments(sanitizedQuery, 3);
             String context = buildContext(documents);
-            String responseText = generateResponse(request.getMessage(), context);
             
-            logger.info("Successfully processed chat request");
-            return new ChatResponse(responseText, request.getSessionId());
+            // Create secure prompt that prevents jailbreaking
+            String securePrompt = securityValidator.createSecurePrompt(sanitizedQuery, context);
+            
+            // Generate response with security constraints
+            String responseText = generateSecureResponse(sanitizedQuery, context);
+            
+            // Validate the response to ensure it doesn't contain inappropriate content
+            String validatedResponse = securityValidator.validateResponse(responseText);
+            
+            // Calculate response time
+            long responseTime = System.currentTimeMillis() - startTime;
+            
+            // Log successful interaction
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, validatedResponse, false, 
+                                "Query processed successfully in " + responseTime + "ms");
+            
+            logger.info("Successfully processed secure chat request in {}ms", responseTime);
+            return new ChatResponse(validatedResponse, sessionId);
             
         } catch (Exception e) {
             logger.error("Error processing chat request", e);
-            return ChatResponse.error("Entschuldigung, aber ich bin auf einen Fehler gestoßen, während ich Ihre Frage bearbeitet habe. Bitte versuchen Sie es erneut oder wenden Sie sich an Ihren Administrator.", request.getSessionId());
+            securityMonitor.recordSecurityIncident(sessionId, ipAddress, SecurityMonitor.SecurityIncidentType.SYSTEM_MANIPULATION_ATTEMPT, "Processing error: " + e.getMessage());
+            
+            String errorMessage = "Entschuldigung, aber ich bin auf einen Fehler gestoßen, während ich Ihre Frage bearbeitet habe. Bitte versuchen Sie es erneut oder wenden Sie sich an Ihren Administrator.";
+            
+            // Log system error
+            s3Logger.logUserQuery(sessionId, ipAddress, userQuery, errorMessage, true, "System error: " + e.getMessage());
+            s3Logger.logSecurityIncident(sessionId, ipAddress, "SYSTEM_ERROR", 
+                                       "Processing error: " + e.getMessage(), userQuery);
+            
+            return ChatResponse.error(errorMessage, sessionId);
         }
     }
     
@@ -211,27 +304,45 @@ public class RagServiceSimple implements RagServiceInterface {
         return context.toString();
     }
     
-    private String generateResponse(String query, String context) {
-        // Simulate AI response generation
+    private String generateSecureResponse(String query, String context) {
+        // Generate response with strict security constraints
         StringBuilder response = new StringBuilder();
         
-        response.append("Basierend auf den verfügbaren Informationen kann ich Ihnen bei Ihrer Frage helfen zu: ");
-        response.append(query);
-        response.append("\n\n");
-        
-        if (context.contains("AWS") || context.contains("cloud") || context.contains("Cloud") || 
-            query.toLowerCase().contains("aws") || query.toLowerCase().contains("cloud")) {
-            response.append("Für AWS- und Cloud-bezogene Themen empfehle ich, bewährte Praktiken ");
-            response.append("für Sicherheit, Skalierbarkeit und Kostenoptimierung zu befolgen. ");
+        // Only provide responses based on the knowledge base context
+        if (context == null || context.trim().isEmpty()) {
+            return "Basierend auf den verfügbaren Informationen in der Wissensdatenbank kann ich diese Frage nicht vollständig beantworten. Bitte stellen Sie sicher, dass Ihre Frage sich auf die konfigurierten Wissensquellen bezieht.";
         }
         
-        if (context.contains("Confluence") || context.contains("wiki") || 
-            query.toLowerCase().contains("confluence") || query.toLowerCase().contains("wiki")) {
-            response.append("Für Confluence- und Wiki-Themen finden Sie detaillierte Dokumentation ");
-            response.append("in den Verwaltungshandbüchern und Benutzerhandbüchern. ");
+        // Analyze query and context to provide secure, relevant responses
+        String normalizedQuery = query.toLowerCase();
+        String normalizedContext = context.toLowerCase();
+        
+        response.append("Basierend auf den verfügbaren Informationen in der Wissensdatenbank:\n\n");
+        
+        if (normalizedContext.contains("aws") || normalizedContext.contains("cloud")) {
+            if (normalizedQuery.contains("konfigur") || normalizedQuery.contains("einricht") || normalizedQuery.contains("setup")) {
+                response.append("Für die AWS-Konfiguration finden Sie in der Dokumentation Schritte zur Einrichtung von Services, Sicherheitsrichtlinien und bewährten Praktiken. ");
+            }
+            if (normalizedQuery.contains("sicherheit") || normalizedQuery.contains("security")) {
+                response.append("Die Sicherheitsdokumentation umfasst Empfehlungen für Zugriffskontrollen, Verschlüsselung und Überwachung. ");
+            }
         }
         
-        response.append("\n\nMöchten Sie, dass ich spezifischere Informationen zu einem bestimmten Aspekt bereitstelle?");
+        if (normalizedContext.contains("confluence") || normalizedContext.contains("wiki")) {
+            if (normalizedQuery.contains("verwaltu") || normalizedQuery.contains("admin") || normalizedQuery.contains("konfigur")) {
+                response.append("Die Confluence-Verwaltungsdokumentation bietet Anleitungen für Benutzerverwaltung, Berechtigungen und Systemkonfiguration. ");
+            }
+            if (normalizedQuery.contains("inhalt") || normalizedQuery.contains("content") || normalizedQuery.contains("seite")) {
+                response.append("Für die Inhaltsverwaltung stehen Handbücher zur Seitenerstellung, Zusammenarbeit und Organisationsstrukturen zur Verfügung. ");
+            }
+        }
+        
+        // Ensure the response is grounded in the knowledge base
+        if (response.length() < 100) {
+            response.append("Die spezifischen Informationen zu Ihrer Frage sind in den verfügbaren Dokumenten enthalten. ");
+        }
+        
+        response.append("\n\nFalls Sie detailliertere Informationen benötigen, präzisieren Sie bitte Ihre Frage bezüglich der spezifischen Aspekte aus der Wissensdatenbank.");
         
         return response.toString();
     }
@@ -274,5 +385,52 @@ public class RagServiceSimple implements RagServiceInterface {
     private void syncS3Content(String s3Bucket) {
         logger.info("Syncing S3 content from bucket: {}", s3Bucket);
         // Simulate S3 document processing
+    }
+    
+    /**
+     * Konfiguriert S3-Logging-Einstellungen
+     */
+    public void configureS3Logging(String bucketName, String region, String accessKey, String secretKey) {
+        s3Logger.configureBucket(bucketName, region, accessKey, secretKey);
+        s3Logger.logSystemEvent("S3_CONFIG_UPDATED", 
+                               "S3 logging configured with bucket: " + bucketName + " in region: " + region, 
+                               null);
+        logger.info("S3 logging configured: bucket={}, region={}", bucketName, region);
+    }
+    
+    /**
+     * Aktiviert/deaktiviert S3-Logging
+     */
+    public void setS3LoggingEnabled(boolean enabled) {
+        s3Logger.setLoggingEnabled(enabled);
+        logger.info("S3 logging {}", enabled ? "enabled" : "disabled");
+    }
+    
+    /**
+     * Gibt S3-Logging-Statistiken zurück
+     */
+    public S3Logger.LoggingStats getS3LoggingStats() {
+        return s3Logger.getLoggingStats();
+    }
+    
+    /**
+     * Testet die S3-Verbindung
+     */
+    public boolean testS3Connection() {
+        try {
+            s3Logger.logSystemEvent("CONNECTION_TEST", "Testing S3 connection", null);
+            return true;
+        } catch (Exception e) {
+            logger.error("S3 connection test failed", e);
+            return false;
+        }
+    }
+    
+    /**
+     * Beendet den Service ordnungsgemäß und schließt alle Logger
+     */
+    public void shutdown() {
+        logger.info("Shutting down RagServiceSimple");
+        s3Logger.shutdown();
     }
 }

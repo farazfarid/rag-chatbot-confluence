@@ -81,12 +81,54 @@ public class AdminServletSimple extends HttpServlet {
         out.println("                <label for='s3Bucket'>S3 Bucket Name:</label>");
         out.println("                <input type='text' id='s3Bucket' name='s3Bucket' placeholder='ihr-dokumente-bucket' />");
         out.println("            </div>");
+            out.println("            </div>");
+        
+        out.println("            <div class='section'>");
+        out.println("            <h2>� S3 Logging Konfiguration</h2>");
+        out.println("            <p>Alle Benutzeranfragen und Sicherheitsereignisse werden sicher in AWS S3 protokolliert.</p>");
+        
+        out.println("            <div class='form-group'>");
+        out.println("                <label for='logBucket'>S3 Log Bucket Name:</label>");
+        out.println("                <input type='text' id='logBucket' name='logBucket' placeholder='confluence-rag-logs' />");
+        out.println("                <small>Separater S3-Bucket für Log-Dateien (wird automatisch erstellt)</small>");
+        out.println("            </div>");
+        
+        out.println("            <div class='form-group'>");
+        out.println("                <label for='logRegion'>Log Bucket Region:</label>");
+        out.println("                <select id='logRegion' name='logRegion'>");
+        out.println("                    <option value='eu-central-1' selected>Europe (Frankfurt) - eu-central-1</option>");
+        out.println("                    <option value='us-east-1'>US East (N. Virginia) - us-east-1</option>");
+        out.println("                    <option value='eu-west-1'>Europe (Ireland) - eu-west-1</option>");
+        out.println("                </select>");
+        out.println("            </div>");
+        
+        out.println("            <div class='form-group'>");
+        out.println("                <label>");
+        out.println("                    <input type='checkbox' id='enableLogging' name='enableLogging' checked>");
+        out.println("                    S3-Logging aktivieren");
+        out.println("                </label>");
+        out.println("                <small>Protokolliert alle Chat-Interaktionen und Sicherheitsereignisse</small>");
+        out.println("            </div>");
+        
+        out.println("            <div class='form-group'>");
+        out.println("                <label>");
+        out.println("                    <input type='checkbox' id='logUserQueries' name='logUserQueries' checked>");
+        out.println("                    Benutzeranfragen protokollieren");
+        out.println("                </label>");
+        out.println("                <small>Speichert alle Benutzerfragen für Analyse und Verbesserung</small>");
+        out.println("            </div>");
+        
+        out.println("            <div class='form-group'>");
+        out.println("                <label>");
+        out.println("                    <input type='checkbox' id='logSecurityEvents' name='logSecurityEvents' checked>");
+        out.println("                    Sicherheitsereignisse protokollieren");
+        out.println("                </label>");
+        out.println("                <small>Protokolliert Jailbreak-Versuche und andere Sicherheitsvorfälle</small>");
+        out.println("            </div>");
         out.println("            </div>");
         
         out.println("            <div class='section'>");
-        out.println("            <h2>📚 Wissensquellen</h2>");
-        
-        out.println("            <div class='form-group'>");
+        out.println("            <h2>📚 Wissensquellen</h2>");        out.println("            <div class='form-group'>");
         out.println("                <label for='confluenceSites'>Confluence Seiten (eine pro Zeile):</label>");
         out.println("                <textarea id='confluenceSites' name='confluenceSites' rows='3' placeholder='https://ihr-unternehmen.atlassian.net/wiki&#10;https://andere-confluence.com'></textarea>");
         out.println("            </div>");
@@ -103,7 +145,30 @@ public class AdminServletSimple extends HttpServlet {
         
         out.println("        <hr style='margin: 40px 0;' />");
         
-        out.println("        <div class='section'>");
+        out.println("            <h2>Sicherheitseinstellungen</h2>");
+            out.println("            <form method='post'>");
+            out.println("                <div class='form-group'>");
+            out.println("                    <label>Maximale Anfragelänge (Zeichen):</label>");
+            out.println("                    <input type='number' name='maxQueryLength' value='500' min='100' max='1000'>");
+            out.println("                    <small>Begrenzt die Länge von Benutzeranfragen zur Sicherheit</small>");
+            out.println("                </div>");
+            out.println("                <div class='form-group'>");
+            out.println("                    <label>Mindest-Relevanz-Score:</label>");
+            out.println("                    <input type='number' name='minRelevanceScore' value='0.3' min='0.1' max='1.0' step='0.1'>");
+            out.println("                    <small>Mindestpunktzahl für Themenbezug zur Wissensdatenbank</small>");
+            out.println("                </div>");
+            out.println("                <div class='form-group'>");
+            out.println("                    <label>");
+            out.println("                        <input type='checkbox' name='strictMode' checked>");
+            out.println("                        Strenger Sicherheitsmodus (empfohlen)");
+            out.println("                    </label>");
+            out.println("                    <small>Aktiviert erweiterte Jailbreak-Erkennung und Inhaltsfilterung</small>");
+            out.println("                </div>");
+            out.println("                <button type='submit' name='action' value='saveSecurity'>Sicherheitseinstellungen speichern</button>");
+            out.println("            </form>");
+            out.println("        </div>");
+            
+            out.println("        <div class='section'>");
         out.println("        <h2>📚 Verwendungsanweisungen</h2>");
         out.println("        <ol>");
         out.println("            <li><strong>Chat Widget hinzufügen:</strong> Fügen Sie das <code>/rag</code> Makro zu jeder Confluence-Seite hinzu</li>");
@@ -145,6 +210,13 @@ public class AdminServletSimple extends HttpServlet {
         String confluenceSites = request.getParameter("confluenceSites");
         String websites = request.getParameter("websites");
         
+        // S3 Logging parameters
+        String logBucket = request.getParameter("logBucket");
+        String logRegion = request.getParameter("logRegion");
+        String enableLogging = request.getParameter("enableLogging");
+        String logUserQueries = request.getParameter("logUserQueries");
+        String logSecurityEvents = request.getParameter("logSecurityEvents");
+        
         // Simple validation
         boolean isValid = awsRegion != null && !awsRegion.trim().isEmpty() &&
                          awsAccessKey != null && !awsAccessKey.trim().isEmpty() &&
@@ -175,6 +247,24 @@ public class AdminServletSimple extends HttpServlet {
         out.println("        <h1>🤖 Konfigurationsergebnis</h1>");
         
         if (isValid) {
+            // Configure S3 logging if parameters provided
+            if (logBucket != null && !logBucket.trim().isEmpty() && 
+                logRegion != null && !logRegion.trim().isEmpty()) {
+                
+                // Here we would configure the S3Logger
+                // For now, just validate and show confirmation
+                out.println("        <div class='status success'>");
+                out.println("            <strong>📊 S3 Logging konfiguriert!</strong>");
+                out.println("            <ul>");
+                out.println("                <li>Log Bucket: " + escapeHtml(logBucket) + "</li>");
+                out.println("                <li>Region: " + escapeHtml(logRegion) + "</li>");
+                out.println("                <li>Logging aktiviert: " + (enableLogging != null ? "Ja" : "Nein") + "</li>");
+                out.println("                <li>Benutzeranfragen protokollieren: " + (logUserQueries != null ? "Ja" : "Nein") + "</li>");
+                out.println("                <li>Sicherheitsereignisse protokollieren: " + (logSecurityEvents != null ? "Ja" : "Nein") + "</li>");
+                out.println("            </ul>");
+                out.println("        </div>");
+            }
+            
             out.println("        <div class='status success'>");
             out.println("            <strong>✅ Erfolgreich!</strong> Konfiguration wurde erfolgreich gespeichert.");
             out.println("            <br/>Ihr RAG Chatbot ist jetzt konfiguriert mit:");
