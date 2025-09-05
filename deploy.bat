@@ -1,10 +1,10 @@
 @echo off
-REM Confluence RAG Chatbot Deployment Script (Windows Batch)
+REM SOPTIM Community Elements Chatbot Deployment Script (Windows Batch)
 REM This script deploys the complete AWS infrastructure and builds the Confluence app
 
 setlocal enabledelayedexpansion
 
-echo 🚀 Starting Confluence RAG Chatbot deployment...
+echo 🚀 Starting SOPTIM Community Elements Chatbot deployment...
 
 REM Check prerequisites
 echo 📋 Checking prerequisites...
@@ -132,9 +132,9 @@ REM Build JAR
 echo 📦 Building Confluence app JAR...
 mvn clean package -q
 
-if exist "target\confluence-rag-chatbot-1.0.0.jar" (
+if exist "target\soptim-community-elements-chatbot-1.0.0.jar" (
     echo ✅ Confluence app built successfully!
-    echo 📁 JAR location: confluence-app\target\confluence-rag-chatbot-1.0.0.jar
+    echo 📁 JAR location: confluence-app\target\soptim-community-elements-chatbot-1.0.0.jar
 ) else (
     echo ❌ Failed to build Confluence app
     pause
@@ -149,10 +149,10 @@ echo 🎉 Deployment completed successfully!
 echo.
 echo 📋 Next steps:
 echo 1. Upload the JAR file to your Confluence Data Center:
-echo    File: confluence-app\target\confluence-rag-chatbot-1.0.0.jar
+echo    File: confluence-app\target\soptim-community-elements-chatbot-1.0.0.jar
 echo.
 echo 2. Configure the app in Confluence Administration:
-echo    - Go to Manage Apps → RAG Chatbot Configuration
+echo    - Go to Manage Apps → SOPTIM Community Elements Chatbot Configuration
 echo    - Enter your AWS credentials and verify the auto-configured endpoints
 echo.
 echo 3. Test the installation:

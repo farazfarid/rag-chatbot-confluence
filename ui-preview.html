@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confluence RAG Chatbot - UI Vorschau</title>
+  <title>SOPTIM Community Elements Chatbot - UI Vorschau</title>
   <style>
     /* CSS from rag-chat.css */
     body {
@@ -23,7 +23,7 @@
     }
 
     .rag-chat-header {
-      background: linear-gradient(135deg, #0052cc, #0065ff);
+      background: linear-gradient(135deg, #009EE0, #007BB8);
       color: white;
       padding: 20px;
       text-align: center;
@@ -63,7 +63,7 @@
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: #0052cc;
+      background: #009EE0;
       color: white;
       display: flex;
       align-items: center;
@@ -86,7 +86,7 @@
     }
 
     .rag-message.user .rag-message-content {
-      background: #0052cc;
+      background: #009EE0;
       color: white;
     }
 
@@ -108,11 +108,11 @@
     }
 
     .rag-chat-input:focus {
-      border-color: #0052cc;
+      border-color: #009EE0;
     }
 
     .rag-chat-send {
-      background: #0052cc;
+      background: #009EE0;
       color: white;
       border: none;
       padding: 12px 20px;
@@ -155,7 +155,7 @@
     }
 
     .admin-section h3 {
-      color: #0052cc;
+      color: #009EE0;
       margin-top: 0;
       border-bottom: 2px solid #e0e0e0;
       padding-bottom: 10px;
@@ -189,30 +189,35 @@
     }
 
     .btn {
-      background: #0052cc;
+      background-color: #009EE0;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 4px;
+      padding: 10px 20px;
+      border-radius: 5px;
       cursor: pointer;
-      font-weight: 500;
-      margin-right: 10px;
+      font-size: 14px;
+      margin: 5px;
+      transition: background-color 0.3s;
     }
 
     .btn:hover {
-      background: #0043a3;
+      background-color: #007BB8;
     }
 
     .btn-secondary {
-      background: #6c757d;
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #545b62;
     }
 
     .btn-success {
-      background: #36b37e;
+      background-color: #28a745;
     }
 
-    .btn-danger {
-      background: #de350b;
+    .btn-success:hover {
+      background-color: #218838;
     }
 
     .status-indicator {
@@ -252,8 +257,8 @@
     }
 
     .tab.active {
-      border-bottom-color: #0052cc;
-      color: #0052cc;
+      border-bottom-color: #009EE0;
+      color: #009EE0;
       font-weight: 500;
     }
 
@@ -269,7 +274,7 @@
 
 <body>
   <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #0052cc;">Confluence RAG Chatbot - UI Vorschau</h1>
+    <h1 style="color: #009EE0;">SOPTIM Community Elements Chatbot - UI Vorschau</h1>
     <p>So werden die Benutzeroberflächen in Confluence aussehen</p>
     <div style="margin: 20px 0;">
       <button onclick="showChat()" class="btn">Chat Widget</button>
@@ -280,7 +285,7 @@
   <!-- Chat Widget Preview -->
   <div id="chatPreview" class="rag-chat-container" style="display: block;">
     <div class="rag-chat-header">
-      <h1>RAG Chatbot</h1>
+      <h1>SOPTIM Community Elements Chatbot</h1>
       <p>Stellen Sie Fragen zu Ihren Confluence-Inhalten und Ihrer Wissensdatenbank</p>
     </div>
     <div class="rag-chat-messages" id="chatMessages">
@@ -319,7 +324,7 @@
   <!-- Admin Interface Preview -->
   <div id="adminPreview" class="admin-container" style="display: none;">
     <div class="admin-header">
-      <h1 style="color: #0052cc; margin: 0;">RAG Chatbot Administration</h1>
+      <h1 style="color: #009EE0; margin: 0;">SOPTIM Community Elements Chatbot Administration</h1>
       <p style="margin: 10px 0 0 0; color: #666;">Konfigurieren Sie Ihren KI-gestützten Wissensassistenten</p>
     </div>
 
@@ -405,7 +410,8 @@
 
           <div class="form-group">
             <label>S3 Log Bucket Name <span style="color: red;">*</span></label>
-            <input type="text" id="logBucketName" placeholder="confluence-rag-logs" value="confluence-rag-logs">
+            <input type="text" id="logBucketName" placeholder="soptim-community-elements-logs"
+              value="soptim-community-elements-logs">
             <small style="color: #666;">Separater S3-Bucket für Log-Dateien (wird automatisch erstellt, falls nicht
               vorhanden)</small>
           </div>
@@ -454,20 +460,20 @@
             style="margin: 20px 0; padding: 15px; background: #e3fcef; border-left: 4px solid #36b37e; border-radius: 3px;">
             <h4 style="margin: 0 0 10px 0; color: #006644;">📁 Log-Datei-Struktur</h4>
             <code style="background: #fff; padding: 5px; display: block; font-family: monospace;">
-              confluence-rag-logs/<br>
-              ├── 2024-09-04/<br>
+              soptim-community-elements-logs/<br>
+              ├── 2024-09-05/<br>
               │   ├── 09/ (Stunde)<br>
               │   │   ├── user-queries-09:15:30.json<br>
               │   │   ├── security-events-09:22:15.json<br>
               │   │   └── system-events-09:30:45.json<br>
               │   └── 10/<br>
-              └── 2024-09-05/
+              └── 2024-09-06/
             </code>
           </div>
 
           <div
-            style="margin: 20px 0; padding: 15px; background: #deebff; border-left: 4px solid #0052cc; border-radius: 3px;">
-            <h4 style="margin: 0 0 10px 0; color: #0052cc;">🔒 Datenschutz & Sicherheit</h4>
+            style="margin: 20px 0; padding: 15px; background: #deebff; border-left: 4px solid #009EE0; border-radius: 3px;">
+            <h4 style="margin: 0 0 10px 0; color: #009EE0;">🔒 Datenschutz & Sicherheit</h4>
             <ul style="margin: 0; padding-left: 20px;">
               <li>Sensible Daten (Passwörter, E-Mails) werden automatisch anonymisiert</li>
               <li>Logs werden mit AWS-Standard-Verschlüsselung gespeichert</li>
@@ -527,7 +533,7 @@
           <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
             <p><strong>Jailbreak-Versuche:</strong> <span style="color: #de350b;">3 blockiert</span></p>
             <p><strong>Off-Topic-Anfragen:</strong> <span style="color: #ff8b00;">12 gefiltert</span></p>
-            <p><strong>Verdächtige Eingaben:</strong> <span style="color: #0052cc;">7 überprüft</span></p>
+            <p><strong>Verdächtige Eingaben:</strong> <span style="color: #009EE0;">7 überprüft</span></p>
           </div>
           <button class="btn btn-secondary">Sicherheitsprotokoll anzeigen</button>
         </div>
@@ -753,7 +759,7 @@
       const typeBorders = {
         success: '#36b37e',
         error: '#de350b',
-        info: '#0052cc'
+        info: '#009EE0'
       };
 
       statusDiv.innerHTML = `

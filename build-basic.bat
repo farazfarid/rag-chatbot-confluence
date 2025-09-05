@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo === Building Confluence RAG Chatbot ===
+echo === Building SOPTIM Community Elements Chatbot ===
 echo.
 
 set "skipValidation=%1"
@@ -57,7 +57,7 @@ set buildResult=%errorlevel%
 set endTime=%time%
 
 if %buildResult% equ 0 (
-    set "jar=target\confluence-rag-chatbot-1.0.0.jar"
+    set "jar=target\soptim-community-elements-chatbot-1.0.0.jar"
     if exist "!jar!" (
         for %%a in ("!jar!") do set "jarSize=%%~za"
         set /a jarSizeMB=!jarSize!/1048576

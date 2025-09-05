@@ -1,6 +1,6 @@
-# Confluence RAG Chatbot - AWS Privacy-First Solution
+# SOPTIM Community Elements Chatbot - AWS Privacy-First Solution
 
-A privacy-focused RAG (Retrieval-Augmented Generation) chatbot for Confluence Data Center that uses AWS services for secure document processing and AI capabilities.
+A privacy-focused RAG (Retrieval-Augmented Generation) chatbot for Confluence Data Center that uses AWS services for secure document processing and AI capabilities. Part of the SOPTIM Community Elements suite.
 
 ## 🏗️ Architecture
 
@@ -44,10 +44,10 @@ This solution uses AWS services to ensure data privacy:
 
 2. **Upload to Confluence:**
    - Go to Confluence Administration → Manage Apps → Upload App
-   - Select: `confluence-app/target/confluence-rag-chatbot-1.0.0.jar`
+   - Select: `confluence-app/target/soptim-community-elements-chatbot-1.0.0.jar`
 
 3. **Configure via admin interface:**
-   - Go to Administration → RAG Chatbot Configuration
+   - Go to Administration → SOPTIM Community Elements Chatbot Configuration
    - Enter your AWS credentials and endpoints
    - Add knowledge sources
 
@@ -60,7 +60,7 @@ This solution uses AWS services to ensure data privacy:
 1. **Clone and setup the project:**
    ```bash
    git clone <your-repo>
-   cd confluence-rag-chatbot
+   cd soptim-community-elements-chatbot
    npm install
    ```
 
@@ -126,8 +126,8 @@ aws.api.gateway.url=https://your-api-id.execute-api.region.amazonaws.com/prod
 
 ## 🤖 Usage
 
-1. **In Confluence pages:** Use the `/rag` macro to add chatbot interface
-2. **Sidebar widget:** Access chatbot from any page via sidebar
+1. **In Confluence pages:** Use the `/soptim-chat` macro to add chatbot interface
+2. **Sidebar widget:** Access SOPTIM Community Elements Chatbot from any page via sidebar
 3. **API Access:** Direct API access for custom integrations
 
 ## 📊 Monitoring

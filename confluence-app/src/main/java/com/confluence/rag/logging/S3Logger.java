@@ -19,7 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * AWS S3 Logger für Confluence RAG Chatbot
+ * AWS S3 Logger für SOPTIM Community Elements Chatbot
  * Protokolliert alle Benutzeranfragen und Systemereignisse in konfigurierbaren S3-Buckets
  */
 public class S3Logger {
@@ -31,7 +31,7 @@ public class S3Logger {
     private final Queue<LogEntry> logQueue = new ConcurrentLinkedQueue<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     
-    private String bucketName = "confluence-rag-logs";
+    private String bucketName = "soptim-community-elements-logs";
     private String awsRegion = "eu-central-1";
     private String awsAccessKey;
     private String awsSecretKey;
@@ -187,7 +187,7 @@ public class S3Logger {
         String hour = timestamp.substring(11, 13); // HH
         String uniqueId = UUID.randomUUID().toString().substring(0, 8);
         
-        return String.format("confluence-rag-logs/%s/%s/%s-%s-%s.json", 
+        return String.format("soptim-community-elements-logs/%s/%s/%s-%s-%s.json", 
                            date, hour, type, timestamp.replace(":", ""), uniqueId);
     }
     

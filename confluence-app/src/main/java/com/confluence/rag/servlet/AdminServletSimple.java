@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * Simplified Admin Servlet for RAG Chatbot configuration
+ * Simplified Admin Servlet for SOPTIM Community Elements Chatbot configuration
  * This version works without Atlassian dependencies
  */
 public class AdminServletSimple extends HttpServlet {
@@ -25,7 +25,7 @@ public class AdminServletSimple extends HttpServlet {
         out.println("<!DOCTYPE html>");
         out.println("<html lang='de'>");
         out.println("<head>");
-        out.println("    <title>RAG Chatbot Konfiguration</title>");
+        out.println("    <title>SOPTIM Community Elements Chatbot Konfiguration</title>");
         out.println("    <meta charset='UTF-8'>");
         out.println("    <style>");
         out.println("        body { font-family: Arial, sans-serif; margin: 40px; }");
@@ -33,17 +33,18 @@ public class AdminServletSimple extends HttpServlet {
         out.println("        .form-group { margin-bottom: 20px; }");
         out.println("        label { display: block; margin-bottom: 5px; font-weight: bold; }");
         out.println("        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }");
-        out.println("        button { background-color: #0052cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }");
-        out.println("        button:hover { background-color: #0747a6; }");
+        out.println("        button { background-color: #009EE0; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }");
+        out.println("        button:hover { background-color: #007BB8; }");
         out.println("        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }");
         out.println("        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }");
         out.println("        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }");
         out.println("        .section { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; }");
+        out.println("        h1 { color: #009EE0; }");
         out.println("    </style>");
         out.println("</head>");
         out.println("<body>");
         out.println("    <div class='container'>");
-        out.println("        <h1>🤖 RAG Chatbot Konfiguration</h1>");
+        out.println("        <h1>🤖 SOPTIM Community Elements Chatbot Konfiguration</h1>");
         
         out.println("        <div class='status info'>");
         out.println("            <strong>📋 Status:</strong> Plugin erfolgreich installiert! Konfigurieren Sie Ihre AWS-Einstellungen unten.");
@@ -89,7 +90,7 @@ public class AdminServletSimple extends HttpServlet {
         
         out.println("            <div class='form-group'>");
         out.println("                <label for='logBucket'>S3 Log Bucket Name:</label>");
-        out.println("                <input type='text' id='logBucket' name='logBucket' placeholder='confluence-rag-logs' />");
+        out.println("                <input type='text' id='logBucket' name='logBucket' placeholder='soptim-community-elements-logs' />");
         out.println("                <small>Separater S3-Bucket für Log-Dateien (wird automatisch erstellt)</small>");
         out.println("            </div>");
         
@@ -238,7 +239,7 @@ public class AdminServletSimple extends HttpServlet {
         out.println("        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }");
         out.println("        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }");
         out.println("        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }");
-        out.println("        a { color: #0052cc; text-decoration: none; }");
+        out.println("        a { color: #009EE0; text-decoration: none; }");
         out.println("        a:hover { text-decoration: underline; }");
         out.println("    </style>");
         out.println("</head>");
@@ -266,8 +267,8 @@ public class AdminServletSimple extends HttpServlet {
             }
             
             out.println("        <div class='status success'>");
-            out.println("            <strong>✅ Erfolgreich!</strong> Konfiguration wurde erfolgreich gespeichert.");
-            out.println("            <br/>Ihr RAG Chatbot ist jetzt konfiguriert mit:");
+            out.println("            <strong>✅ Erfolgreich!</strong> SOPTIM Community Elements Chatbot wurde erfolgreich konfiguriert.");
+            out.println("            <br/>Ihr Chatbot ist jetzt bereit mit:");
             out.println("            <ul>");
             out.println("                <li>AWS Region: " + escapeHtml(awsRegion) + "</li>");
             if (opensearchEndpoint != null && !opensearchEndpoint.trim().isEmpty()) {

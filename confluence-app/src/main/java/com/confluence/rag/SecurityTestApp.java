@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 /**
  * Simple test application to demonstrate the jailbreak-proof security features
+ * for SOPTIM Community Elements Chatbot
  */
 public class SecurityTestApp {
     
@@ -14,7 +15,7 @@ public class SecurityTestApp {
     private static final SecurityMonitor monitor = new SecurityMonitor();
     
     public static void main(String[] args) {
-        System.out.println("=== CONFLUENCE RAG CHATBOT - JAILBREAK PROTECTION TEST ===");
+        System.out.println("=== SOPTIM COMMUNITY ELEMENTS CHATBOT - JAILBREAK PROTECTION TEST ===");
         System.out.println("Dieses System ist gegen Jailbreak-Versuche gesichert.");
         System.out.println("Es sind nur Fragen zur Wissensdatenbank erlaubt.");
         System.out.println();

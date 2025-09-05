@@ -1,7 +1,7 @@
-# Enhanced Build Script - Confluence RAG Chatbot
+# Enhanced Build Script - SOPTIM Community Elements Chatbot
 param([switch]$Verbose, [switch]$SkipValidation)
 
-Write-Host "=== Building Confluence RAG Chatbot ===" -ForegroundColor Cyan
+Write-Host "=== Building SOPTIM Community Elements Chatbot ===" -ForegroundColor Cyan
 
 # Pre-build validation
 if (!$SkipValidation) {
@@ -58,7 +58,7 @@ $buildEnd = Get-Date
 $buildTime = [math]::Round(($buildEnd - $buildStart).TotalSeconds, 1)
 
 if ($LASTEXITCODE -eq 0) {
-    $jar = "target\confluence-rag-chatbot-1.0.0.jar"
+    $jar = "target\soptim-community-elements-chatbot-1.0.0.jar"
     if (Test-Path $jar) {
         $jarSize = [math]::Round((Get-Item $jar).Length / 1MB, 2)
         Write-Host "`n✅ BUILD SUCCESS!" -ForegroundColor Green

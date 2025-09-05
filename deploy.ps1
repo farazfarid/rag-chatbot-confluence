@@ -1,4 +1,4 @@
-# Confluence RAG Chatbot Deployment Script (PowerShell)
+# SOPTIM Community Elements Chatbot Deployment Script (PowerShell)
 # This script deploys the complete AWS infrastructure and builds the Confluence app
 
 param(
@@ -9,7 +9,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🚀 Starting Confluence RAG Chatbot deployment..." -ForegroundColor Cyan
+Write-Host "🚀 Starting SOPTIM Community Elements Chatbot deployment..." -ForegroundColor Cyan
 
 # Check prerequisites
 Write-Host "📋 Checking prerequisites..." -ForegroundColor Yellow
@@ -192,7 +192,7 @@ try {
     exit 1
 }
 
-$jarPath = "target\confluence-rag-chatbot-1.0.0.jar"
+$jarPath = "target\soptim-community-elements-chatbot-1.0.0.jar"
 if (Test-Path $jarPath) {
     Write-Host "✅ Confluence app built successfully!" -ForegroundColor Green
     Write-Host "📁 JAR location: confluence-app\$jarPath" -ForegroundColor White
@@ -214,7 +214,7 @@ Write-Host "1. Upload the JAR file to your Confluence Data Center:" -ForegroundC
 Write-Host "   File: confluence-app\$jarPath" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. Configure the app in Confluence Administration:" -ForegroundColor White
-Write-Host "   - Go to Manage Apps → RAG Chatbot Configuration" -ForegroundColor Gray
+Write-Host "   - Go to Manage Apps → SOPTIM Community Elements Chatbot Configuration" -ForegroundColor Gray
 Write-Host "   - Enter your AWS credentials and verify the auto-configured endpoints" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. Test the installation:" -ForegroundColor White

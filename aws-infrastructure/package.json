@@ -1,7 +1,7 @@
 {
   "name": "confluence-rag-aws-infrastructure",
   "version": "1.0.0",
-  "description": "AWS infrastructure for Confluence RAG chatbot",
+  "description": "AWS infrastructure for SOPTIM Community Elements Chatbot",
   "main": "lib/confluence-rag-stack.js",
   "scripts": {
     "build": "tsc",

@@ -1,5 +1,5 @@
 /**
- * RAG Chatbot JavaScript functionality
+ * SOPTIM Community Elements Chatbot JavaScript functionality
  */
 (function ($) {
   'use strict';
@@ -293,7 +293,7 @@
             AJS.flag({
               type: 'success',
               title: 'S3 Logging konfiguriert',
-              body: 'Die S3-Logging-Konfiguration wurde erfolgreich gespeichert. Bucket: ' + bucketName
+              body: 'Die S3-Logging-Konfiguration für SOPTIM Community Elements wurde erfolgreich gespeichert. Bucket: ' + bucketName
             });
           } else {
             AJS.flag({
@@ -391,7 +391,7 @@
       var dialogHtml = `
         <section role="dialog" id="s3-config-dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
           <header class="aui-dialog2-header">
-            <h2 class="aui-dialog2-header-main">S3 Logging Konfiguration</h2>
+            <h2 class="aui-dialog2-header-main">SOPTIM Community Elements - S3 Logging Konfiguration</h2>
             <a class="aui-dialog2-header-close">
               <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
             </a>
@@ -400,7 +400,7 @@
             <form class="aui" id="s3-config-form">
               <div class="field-group">
                 <label for="s3-bucket-name">S3 Bucket Name <span class="aui-icon icon-required">required</span></label>
-                <input class="text" type="text" id="s3-bucket-name" name="bucketName" placeholder="confluence-rag-logs">
+                <input class="text" type="text" id="s3-bucket-name" name="bucketName" placeholder="soptim-community-elements-logs">
                 <div class="description">Der S3-Bucket für Log-Dateien (wird automatisch erstellt, falls nicht vorhanden)</div>
               </div>
               <div class="field-group">
